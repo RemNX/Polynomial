@@ -1,5 +1,8 @@
 # Polynomial Plotter
 
+## How to
+the exe file is in the build/Desktop_QT...
+
 ## Versions
 
 1.0.0 : Full first version

@@ -70,7 +70,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
         QPoint pos = mouseEvent->pos();
 
-        // conversion en coordonnées du graphe
+        // coordinate conversion
         QPointF value = m_chart->mapToValue(pos, m_series);
 
         double x = value.x();
@@ -78,16 +78,27 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
         ui->point_value_output->setText(QString("x=%1 y=%2").arg(x, 0, 'f', 2).arg(y, 0, 'f', 2));
 
-        // récupérer les limites visibles
         double yMin = m_axisY->min();
         double yMax = m_axisY->max();
 
-        // convertir en coordonnées scène
         QPointF p1 = m_chart->mapToPosition(QPointF(x, yMin), m_series);
         QPointF p2 = m_chart->mapToPosition(QPointF(x, yMax), m_series);
 
-        // mettre à jour la ligne
         m_cursorLine->setLine(QLineF(p1, p2));
+    }
+
+    //if click
+    else if (event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+
+        if (mouseEvent->button() == Qt::LeftButton) {
+            QPointF value = m_chart->mapToValue(mouseEvent->pos(), m_series);
+            ui->selected_x->setValue(value.x());
+
+            move_select_point();
+            refresh_graph();
+        }
+
     }
 
     return QObject::eventFilter(obj, event);
@@ -95,20 +106,57 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
 //create the graph skeleton
 void MainWindow::init_graph(){
-    m_series = new QLineSeries();           //empty points list
+    //x and x list
+    m_series = new QLineSeries();
     m_chart  = new QChart();
+    m_series->setName("f(x)");
     m_chart->addSeries(m_series);
+
+    //x selected point
+    m_selectedPoint= new QScatterSeries();
+    m_selectedPoint->setMarkerSize(10);
+    m_chart->addSeries(m_selectedPoint);
+    m_chart->legend()->markers(m_selectedPoint)[0]->setVisible(false);
+
+    //derivate first list
+    m_seriesfirst = new QLineSeries();
+    m_seriesfirst->setName("f'(x)");
+    m_chart->addSeries(m_seriesfirst);
+
+    //derivate second list
+    m_seriessecond = new QLineSeries();
+    m_seriessecond->setName("f''(x)");
+    m_chart->addSeries(m_seriessecond);
+
+    //tangent list
+    m_seriestangent = new QLineSeries();
+    m_seriestangent->setName("tangent");
+    m_chart->addSeries(m_seriestangent);
 
     m_axisX = new QValueAxis();             //add x axis
     m_axisX->setTitleText("x");
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
     m_series->attachAxis(m_axisX);
+    m_seriesfirst->attachAxis(m_axisX);
+    m_selectedPoint->attachAxis(m_axisX);
+    m_seriessecond->attachAxis(m_axisX);
+    m_seriestangent->attachAxis(m_axisX);
 
     m_axisY = new QValueAxis();             //add y axis
     m_axisX->setTitleText("x");
     m_axisY->setTitleText("y");
     m_chart->addAxis(m_axisY, Qt::AlignLeft);
     m_series->attachAxis(m_axisY);
+    m_selectedPoint->attachAxis(m_axisY);
+    m_seriesfirst->attachAxis(m_axisY);
+    m_seriessecond->attachAxis(m_axisY);
+    m_seriestangent->attachAxis(m_axisY);
+
+    m_series->setColor(Qt::blue);
+    m_selectedPoint->setColor(Qt::magenta);
+    m_seriesfirst->setColor(Qt::red);
+    m_seriessecond->setColor(Qt::green);
+    m_seriestangent->setColor(Qt::yellow);
 
     m_chartView = new QChartView(m_chart, this);            //render the chart
     m_chartView->setRenderHint(QPainter::Antialiasing);
@@ -119,7 +167,7 @@ void MainWindow::init_graph(){
     m_chartView->viewport()->installEventFilter(this);
 
     m_cursorLine = new QGraphicsLineItem();
-    m_cursorLine->setPen(QPen(Qt::red, 1, Qt::DashLine));
+    m_cursorLine->setPen(QPen(Qt::cyan, 1, Qt::DashLine));
 
     m_chart->scene()->addItem(m_cursorLine);
 
@@ -147,6 +195,7 @@ void MainWindow::init_graph(){
         box->setMinimum(-10000);
         box->setMaximum(10000);
         box->setSingleStep(0.1);
+        box->setDecimals(5);
 
         slider->setMinimum(-100);
         slider->setMaximum(100);
@@ -178,30 +227,49 @@ void MainWindow::init_graph(){
 
 //refresh the graph display for new values
 void MainWindow::refresh_graph(){
+    move_select_point();
+
     //get x min max values
     double xmin=ui->input_min->value();
     double xmax=ui->input_max->value();
     int npoints=100;
-
-    //step length
-    double step = (xmax-xmin)/(npoints-1);
+    double step = (xmax-xmin)/(npoints-1);  //step size
 
     //apply the function to every x points
     QList<QPointF> newPoints;
+    QList<QPointF> newPointsFirst;
+    QList<QPointF> newPointsSecond;
+    QList<QPointF> newPointsTangent;
     for (int i = 0; i < npoints; i++){
         double x = xmin + i * step;
         newPoints.append(QPointF(x, polynomial_function(x)));
+
+        //if derivate first or second should be displayed
+        if (ui->box_derivate_first->isChecked()){
+            newPointsFirst.append(QPointF(x, polynomial_derivative(x,1)));
+        }
+        if (ui->box_derivate_second->isChecked()){
+            newPointsSecond.append(QPointF(x, polynomial_derivative(x,2)));
+        }
+
+        //if tangent should be displayed
+        if (ui->box_tangent->isChecked()){
+            double a = ui->selected_x->value();
+            newPointsTangent.append(QPointF(x, tangent(x,a)));
+        }
     }
     m_series->replace(newPoints);
+    m_seriesfirst->replace(newPointsFirst);
+    m_seriessecond->replace(newPointsSecond);
+    m_seriestangent->replace(newPointsTangent);
 
     //get y min and max
     auto [minIt, maxIt] = std::minmax_element(
         newPoints.begin(), newPoints.end(),
         [](const QPointF &a, const QPointF &b) { return a.y() < b.y(); }
-        );
+    );
 
-    //apply the axis limit    //todo way to change the y axis
-    m_axisX->setRange(xmin, xmax);
+    //apply the axis limit
     //if degree=0 change the y min and max to be seen
     double ymin=minIt->y();
     double ymax=maxIt->y();
@@ -210,7 +278,8 @@ void MainWindow::refresh_graph(){
         ymin=ymin-5;
         ymax=ymax+5;
     }
-    qDebug()<<(ymin==ymax);
+
+    m_axisX->setRange(xmin, xmax);
     m_axisY->setRange(ymin, ymax);
 
 
@@ -235,7 +304,7 @@ void MainWindow::refresh_graph(){
     m_axisY->setTickAnchor(0);
 
 
-    //part to display the full written function on title
+    //_______part to display the full written function on title
     QList<double> coeffs;
     int degree=ui->input_input->value();
     int max=ui->input_layout->count();
@@ -246,8 +315,9 @@ void MainWindow::refresh_graph(){
         if (spinBox)
             coeffs.append(spinBox->value());
     }
-
     ui->Title->setText(polynomialToString(coeffs));
+    ui->derivate_first_output->setText(derivativeToString(coeffs,1));
+    ui->derivate_second_output->setText(derivativeToString(coeffs,2));
 }
 
 //when number of degree changed enable or disable the widgets to change de value
@@ -283,6 +353,7 @@ double MainWindow::polynomial_function(double x){
     }
     return res;
 }
+
 
 //transform the function in a string readable as a title
 QString MainWindow::polynomialToString(const QList<double> &coeffs)
@@ -323,6 +394,108 @@ QString MainWindow::polynomialToString(const QList<double> &coeffs)
 }
 
 
+QList<double> MainWindow::derivateCoefficients(QList<double> coeffs, int order){
+    for (int k = 0; k < order; k++) {
+        QList<double> derived;
+        int n = coeffs.size();
+
+        for (int i = 0; i < n; i++) {
+            int exponent = n - i - 1;
+
+            if (exponent > 0) {
+                derived.append(coeffs[i] * exponent);
+            }
+        }
+
+        coeffs = derived;
+
+        if (coeffs.isEmpty())
+            break;
+    }
+
+    return coeffs;
+}
+
+
+double MainWindow::polynomial_derivative(double x, int order){
+    double res = 0;
+    int degree = ui->input_input->value();
+
+    QList<double> coeffs;
+    int max = ui->input_layout->count();
+
+    // récupérer coefficients
+    for (int i = max - degree; i < max; i++){
+        QWidget *container = ui->input_layout->itemAt(i)->widget();
+        if (!container) continue;
+
+        QDoubleSpinBox *spinBox = container->findChild<QDoubleSpinBox*>();
+        if (spinBox)
+            coeffs.append(spinBox->value());
+    }
+
+    // dériver n fois
+    coeffs = derivateCoefficients(coeffs, order);
+
+    // évaluation
+    int n = coeffs.size();
+    for (int i = 0; i < n; i++){
+        res += coeffs[i] * std::pow(x, n - i - 1);
+    }
+
+    return res;
+}
+
+
+QString MainWindow::derivativeToString(const QList<double> &coeffs, int order){
+    QList<double> derived = derivateCoefficients(coeffs, order);
+
+    QString result;
+
+    if (order == 0) result = "f(x) = ";
+    else if (order == 1) result = "f'(x) = ";
+    else result = "f^(" + QString::number(order) + ")(x) = ";
+
+    if (derived.isEmpty()) return result + "0";
+
+    int degree = derived.size();
+    bool firstTerm = true;
+
+    for (int i = 0; i < degree; i++){
+        double coeff = derived[i];
+        int exponent = degree - i - 1;
+
+        if (coeff == 0.0) continue;
+
+        if (!firstTerm)
+            result += (coeff > 0) ? " + " : " - ";
+        else if (coeff < 0)
+            result += "-";
+
+        double absCoeff = std::abs(coeff);
+
+        if (absCoeff != 1.0 || exponent == 0)
+            result += QString::number(absCoeff, 'g', 4);
+
+        if (exponent == 1)
+            result += "x";
+        else if (exponent > 1)
+            result += "x^" + QString::number(exponent);
+
+        firstTerm = false;
+    }
+
+    if (firstTerm) return result + "0";
+    return result;
+}
+
+
+double MainWindow::tangent(double x, double a){
+    return polynomial_derivative(a,1)*(x-a)+polynomial_function(a);
+}
+
+
+//input slots  //todo found a way to put them in one function
 void MainWindow::on_input_min_valueChanged(double arg1)
 {
     refresh_graph();
@@ -330,6 +503,43 @@ void MainWindow::on_input_min_valueChanged(double arg1)
 
 
 void MainWindow::on_input_max_valueChanged(double arg1)
+{
+    refresh_graph();
+}
+
+
+void MainWindow::on_box_derivate_first_checkStateChanged(const Qt::CheckState &arg1)
+{
+    refresh_graph();
+}
+
+
+void MainWindow::on_box_derivate_second_checkStateChanged(const Qt::CheckState &arg1)
+{
+    refresh_graph();
+}
+
+
+void MainWindow::move_select_point(){
+    double x = ui->selected_x->value();
+    double y = polynomial_function(x);
+
+    m_selectedPoint->clear();
+    m_selectedPoint->append(x,y);
+
+    ui->selected_y->setValue(y);
+    ui->selected_tangent->setValue(polynomial_derivative(x,1));
+}
+
+
+void MainWindow::on_selected_x_valueChanged(double x)
+{
+    move_select_point();
+    refresh_graph();
+}
+
+
+void MainWindow::on_box_tangent_checkStateChanged(const Qt::CheckState &arg1)
 {
     refresh_graph();
 }

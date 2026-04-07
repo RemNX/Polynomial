@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="4,1">
+   <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="16,5">
     <item>
      <layout class="QVBoxLayout" name="graph_part" stretch="1,20,2">
       <item>
@@ -45,10 +45,10 @@
           <item row="0" column="1">
            <widget class="QDoubleSpinBox" name="input_min">
             <property name="minimum">
-             <double>-1000000.000000000000000</double>
+             <double>-100.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>1000000.000000000000000</double>
+             <double>100.000000000000000</double>
             </property>
             <property name="value">
              <double>-4.000000000000000</double>
@@ -58,10 +58,10 @@
           <item row="1" column="1">
            <widget class="QDoubleSpinBox" name="input_max">
             <property name="minimum">
-             <double>-1000000.000000000000000</double>
+             <double>-100.000000000000000</double>
             </property>
             <property name="maximum">
-             <double>1000000.000000000000000</double>
+             <double>100.000000000000000</double>
             </property>
             <property name="value">
              <double>4.000000000000000</double>
@@ -84,7 +84,7 @@
             <item>
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Degrée</string>
+               <string>Degree</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -134,28 +134,156 @@
       <item>
        <widget class="QGroupBox" name="groupBox_2">
         <property name="title">
-         <string>GroupBox</string>
+         <string>Cursor &amp; selected</string>
         </property>
-        <widget class="QLabel" name="point_value_output">
+        <widget class="QWidget" name="gridLayoutWidget">
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>30</y>
-           <width>141</width>
-           <height>16</height>
+           <y>29</y>
+           <width>211</width>
+           <height>111</height>
           </rect>
          </property>
-         <property name="text">
-          <string/>
-         </property>
+         <layout class="QGridLayout" name="xValueLayout" rowstretch="1,2,0,0,0" columnstretch="1,1">
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>selected X</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="point_value_output">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Cursor :</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>selected Y</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QDoubleSpinBox" name="selected_y">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-100000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="selected_x">
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-1000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>1000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="box_tangent">
+            <property name="text">
+             <string>Tangent</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="selected_tangent">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-100000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox">
+       <widget class="QGroupBox" name="Derivate">
         <property name="title">
-         <string>GroupBox</string>
+         <string>Derivate</string>
         </property>
+        <widget class="QWidget" name="gridLayoutWidget_2">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>30</y>
+           <width>261</width>
+           <height>101</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2" columnstretch="1,15">
+          <item row="1" column="1">
+           <widget class="QLabel" name="derivate_first_output">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="derivate_second_output">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="box_derivate_first">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="box_derivate_second">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>

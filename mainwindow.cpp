@@ -166,10 +166,11 @@ void MainWindow::init_graph(){
     m_chartView->viewport()->setMouseTracking(true);
     m_chartView->viewport()->installEventFilter(this);
 
-    m_cursorLine = new QGraphicsLineItem();
-    m_cursorLine->setPen(QPen(Qt::cyan, 1, Qt::DashLine));
-
-    m_chart->scene()->addItem(m_cursorLine);
+    if (m_chart && m_chart->scene()) {
+        m_cursorLine = new QGraphicsLineItem();
+        m_cursorLine->setPen(QPen(Qt::cyan, 1, Qt::DashLine));
+        m_chart->scene()->addItem(m_cursorLine);
+    }
 
     ui->display_graph->addWidget(m_chartView);              //add the chart to the layout
 
@@ -189,8 +190,8 @@ void MainWindow::init_graph(){
         QVBoxLayout *layout1 = new QVBoxLayout(frame);
 
         QHBoxLayout *layout2 = new QHBoxLayout();
-        QDoubleSpinBox *box = new QDoubleSpinBox();
-        QSlider *slider = new QSlider(Qt::Horizontal);
+        QDoubleSpinBox *box = new QDoubleSpinBox(frame);
+        QSlider *slider = new QSlider(Qt::Horizontal,frame);
 
         box->setMinimum(-10000);
         box->setMaximum(10000);

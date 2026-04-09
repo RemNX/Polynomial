@@ -13,13 +13,20 @@ the exe file is in the build/Desktop_QT...
 
 ## Versions
 
-### 1.1.0 : Derivative and tangent graph
+### 1.2 : Optimisation update
+#### 1.2.0
+- removed two function to prevent memory leak
+- creation of the polynomialcalculator files to improve readability (don't used for now)
+- combine polynomial calculation and derivative calculcation in one function
+- add cache value for the coefficients so no need to get the input each time or calculate the derivative when there is no change
+
+### 1.1 : Derivative and tangent graph
 - select x and get its value
 - increase decimals for coefficients (2 to 5)
 - add derivatives first and second with their plot (for now in the same graph but maybe an option to display them separately later)
 - add tangent display
 
-### 1.0.0 : Full first version
+### 1.0 : Full first version
 - plot between 0 and 5 degrees
 - real time graph
 - x,y cursor
@@ -27,7 +34,7 @@ the exe file is in the build/Desktop_QT...
 - polynomial equation title
 
 ## Objective
-### for 1.2.0 : optimisation update
+### for 1.2 : optimisation update
 - prevent some crashes or leaks (even if they are now impossible)
 - make the code more readable and simple
 - separate some functions in another file or class (calculus, ui)
@@ -37,12 +44,12 @@ the exe file is in the build/Desktop_QT...
 - validation for each input
 - best translation of commentary and function name
 
-### for 1.3.0 : more functionality
+### for 1.3 : more functionality
 - add integral display
 - polynomial root calculation
 - display local and global extremum
 
-### for 1.4.0 : more documentation 
+### for 1.4 : more documentation 
 - access to the readme in the app
 - explanation on what a polynomial function is
 - equations 

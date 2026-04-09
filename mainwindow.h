@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "polynomialcalculator.h"
+
 #include <QMainWindow>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
@@ -43,19 +45,22 @@ private slots:
     void on_box_tangent_checkStateChanged(const Qt::CheckState &arg1);
 
 private:
+    PolynomialCalculator m_calculator;
+
     Ui::MainWindow *ui;
     QVector<QWidget*> input_list;
+    //graph construction
     QChartView  *m_chartView;
     QChart      *m_chart;
+    QValueAxis  *m_axisX;
+    QValueAxis  *m_axisY;
+    //seriers or object for graph display
     QLineSeries *m_series;
     QLineSeries *m_seriesfirst;
     QLineSeries *m_seriessecond;
     QLineSeries *m_seriestangent;
     QScatterSeries *m_selectedPoint;
-    QValueAxis  *m_axisX;
-    QValueAxis  *m_axisY;
     QGraphicsLineItem *m_cursorLine = nullptr;  //vertical line for graph
-    QList<QPointF> m_currentPoints;             // display points
 
     void init_graph();
     void refresh_graph();

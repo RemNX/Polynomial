@@ -14,11 +14,23 @@ the exe file is in the build/Desktop_QT...
 ## Versions
 
 ### 1.2 : Optimisation update
+- separation of the functions in differant files to improve readabality
+
+<details>
+<summary> sub-version details </summary>
+
 #### 1.2.0
 - removed two function to prevent memory leak
 - creation of the polynomialcalculator files to improve readability (don't used for now)
 - combine polynomial calculation and derivative calculcation in one function
 - add cache value for the coefficients so no need to get the input each time or calculate the derivative when there is no change
+
+#### 1.2.1
+- calculation function from mainwindows removed
+- added new files to treat graph functions
+- this version is more a clean save than a new version
+
+</details>
 
 ### 1.1 : Derivative and tangent graph
 - select x and get its value

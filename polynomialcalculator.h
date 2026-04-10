@@ -18,7 +18,7 @@ public:
     double value(double x, int derivative_order=0) const;
     QList<double> DerivativeCoefficient(int order) const;
     double valueTangent(double x, double a) const;
-    QString polynomialToString(const QList<double> &coeffs);
+    QString polynomialToString(const QList<double> &coeffs,int order=0);
 
     void clearCache();
 

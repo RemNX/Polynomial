@@ -25,7 +25,7 @@ QList<double> PolynomialCalculator::getDerivativeCoefficients(int order) const{
         return m_derivativeCache[order];
     }
 
-    QList<double> res=getDerivativeCoefficients(order);
+    QList<double> res=DerivativeCoefficient(order);
     m_derivativeCache[order]=res;
 
     return res;
@@ -72,14 +72,14 @@ QList<double> PolynomialCalculator::DerivativeCoefficient(int order) const{
 }
 
 double PolynomialCalculator::valueTangent(double x, double a) const{
-    return value(a,1)*(x-a+value(a));
+    return value(a,1)*(x-a)+value(a);
 }
 
-QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs){
+QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs,int order){
     //if no coeffs for now
     if (coeffs.isEmpty()) return "";
 
-    QString result = "f(x) = ";
+    QString result = "f" + QString("'").repeated(order) + "(x) = ";;
     int degree = coeffs.size();
     bool firstTerm = true;                      //for the first coeff
 
@@ -110,3 +110,4 @@ QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs){
     if (firstTerm) return "f(x) = 0";
     return result;
 }
+

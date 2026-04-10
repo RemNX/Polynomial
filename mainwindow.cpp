@@ -136,6 +136,7 @@ void MainWindow::init_graph(){
     m_axisX = new QValueAxis();             //add x axis
     m_axisX->setTitleText("x");
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
+
     m_series->attachAxis(m_axisX);
     m_seriesfirst->attachAxis(m_axisX);
     m_selectedPoint->attachAxis(m_axisX);
@@ -151,6 +152,7 @@ void MainWindow::init_graph(){
     m_seriesfirst->attachAxis(m_axisY);
     m_seriessecond->attachAxis(m_axisY);
     m_seriestangent->attachAxis(m_axisY);
+
 
     m_series->setColor(Qt::blue);
     m_selectedPoint->setColor(Qt::magenta);
@@ -226,8 +228,31 @@ void MainWindow::init_graph(){
     }
 }
 
+//get the coefficients from input
+void MainWindow::updateCalculatorCoefficients(){
+    int degree = ui->input_input->value();
+    int max = ui->input_layout->count();
+    QList<double> coeffs;
+
+    for (int i = max - degree; i < max; i++){
+        QWidget *container = ui->input_layout->itemAt(i)->widget();
+        if (!container) continue;
+
+        QDoubleSpinBox *spinBox = container->findChild<QDoubleSpinBox*>();
+        if (spinBox)
+            coeffs.append(spinBox->value());
+    }
+
+    std::reverse(coeffs.begin(), coeffs.end());
+
+    m_calculator.setCoefficients(coeffs);
+}
+
 //refresh the graph display for new values
 void MainWindow::refresh_graph(){
+    //update coeffs
+    updateCalculatorCoefficients();
+
     move_select_point();
 
     //get x min max values
@@ -236,6 +261,7 @@ void MainWindow::refresh_graph(){
     int npoints=100;
     double step = (xmax-xmin)/(npoints-1);  //step size
 
+
     //apply the function to every x points
     QList<QPointF> newPoints;
     QList<QPointF> newPointsFirst;
@@ -243,20 +269,20 @@ void MainWindow::refresh_graph(){
     QList<QPointF> newPointsTangent;
     for (int i = 0; i < npoints; i++){
         double x = xmin + i * step;
-        newPoints.append(QPointF(x, polynomial_function(x)));
+        newPoints.append(QPointF(x, m_calculator.value(x)));
 
         //if derivate first or second should be displayed
         if (ui->box_derivate_first->isChecked()){
-            newPointsFirst.append(QPointF(x, polynomial_derivative(x,1)));
+            newPointsFirst.append(QPointF(x, m_calculator.value(x,1)));
         }
         if (ui->box_derivate_second->isChecked()){
-            newPointsSecond.append(QPointF(x, polynomial_derivative(x,2)));
+            newPointsSecond.append(QPointF(x, m_calculator.value(x,2)));
         }
 
         //if tangent should be displayed
         if (ui->box_tangent->isChecked()){
             double a = ui->selected_x->value();
-            newPointsTangent.append(QPointF(x, tangent(x,a)));
+            newPointsTangent.append(QPointF(x, m_calculator.valueTangent(x,a)));
         }
     }
     m_series->replace(newPoints);
@@ -282,7 +308,6 @@ void MainWindow::refresh_graph(){
 
     m_axisX->setRange(xmin, xmax);
     m_axisY->setRange(ymin, ymax);
-
 
     //get axis ranges
     double xRange = xmax - xmin;
@@ -316,10 +341,23 @@ void MainWindow::refresh_graph(){
         if (spinBox)
             coeffs.append(spinBox->value());
     }
-    ui->Title->setText(polynomialToString(coeffs));
-    ui->derivate_first_output->setText(derivativeToString(coeffs,1));
-    ui->derivate_second_output->setText(derivativeToString(coeffs,2));
+    ui->Title->setText(m_calculator.polynomialToString(coeffs));
+    ui->derivate_first_output->setText(m_calculator.polynomialToString(m_calculator.getDerivativeCoefficients(1),1));
+    ui->derivate_second_output->setText(m_calculator.polynomialToString(m_calculator.getDerivativeCoefficients(2),2));
 }
+
+
+void MainWindow::move_select_point(){
+    double x = ui->selected_x->value();
+    double y = m_calculator.value(x);
+
+    m_selectedPoint->clear();
+    m_selectedPoint->append(x,y);
+
+    ui->selected_y->setValue(y);
+    ui->selected_tangent->setValue(m_calculator.value(x,1));
+}
+
 
 //when number of degree changed enable or disable the widgets to change de value
 void MainWindow::on_input_input_valueChanged(int value){
@@ -330,171 +368,6 @@ void MainWindow::on_input_input_valueChanged(int value){
     ui->output_degree->setText(QString::number(value-1));
     refresh_graph();
 }
-
-//function calculation
-double MainWindow::polynomial_function(double x){
-    double res=0;
-    int degree= ui->input_input->value();
-
-    //get spinbox values for each coefficients
-    QList<double> coeffs;
-    int max=ui->input_layout->count();
-    for (int i = max- degree; i < max; i++){
-        QWidget *container = ui->input_layout->itemAt(i)->widget();
-        if (!container) continue;
-
-        QDoubleSpinBox *spinBox = container->findChild<QDoubleSpinBox*>();
-        if (spinBox)
-            coeffs.append(spinBox->value());
-    }
-
-    //function calculation
-    for (int i=0;i<coeffs.size();i++){
-        res+=coeffs[i]*std::pow(x,coeffs.size()-i-1);
-    }
-    return res;
-}
-
-
-//transform the function in a string readable as a title
-QString MainWindow::polynomialToString(const QList<double> &coeffs)
-{
-    //if no coefft for now
-    if (coeffs.isEmpty()) return "";
-
-    QString result = "f(x) = ";
-    int degree = coeffs.size();
-    bool firstTerm = true;                      //for the first coeff
-
-    for (int i = 0; i < degree; i++){
-        double coeff    = coeffs[i];            //actual coeffficient
-        int    exponent = degree - i-1;
-
-        if (coeff == 0.0) continue;             //dont display coeff if 0
-
-        if (!firstTerm)                             //if first term add a + or a -
-            result += (coeff > 0) ? " + " : " - ";
-        else if (coeff < 0)                         //else only add - if negative
-            result += "-";
-
-        double absCoeff = std::abs(coeff);
-
-        if (absCoeff != 1.0 || exponent == 0)
-            result += QString::number(absCoeff, 'g', 4); // 4 decimal number
-
-        if (exponent == 1)              //if pre last coeff
-            result += "x";
-        else if (exponent > 1)
-            result += "x^" + QString::number(exponent);
-
-        firstTerm = false;
-    }
-
-    if (firstTerm) return "f(x) = 0";
-    return result;
-}
-
-
-QList<double> MainWindow::derivateCoefficients(QList<double> coeffs, int order){
-    for (int k = 0; k < order; k++) {
-        QList<double> derived;
-        int n = coeffs.size();
-
-        for (int i = 0; i < n; i++) {
-            int exponent = n - i - 1;
-
-            if (exponent > 0) {
-                derived.append(coeffs[i] * exponent);
-            }
-        }
-
-        coeffs = derived;
-
-        if (coeffs.isEmpty())
-            break;
-    }
-
-    return coeffs;
-}
-
-
-double MainWindow::polynomial_derivative(double x, int order){
-    double res = 0;
-    int degree = ui->input_input->value();
-
-    QList<double> coeffs;
-    int max = ui->input_layout->count();
-
-    // récupérer coefficients
-    for (int i = max - degree; i < max; i++){
-        QWidget *container = ui->input_layout->itemAt(i)->widget();
-        if (!container) continue;
-
-        QDoubleSpinBox *spinBox = container->findChild<QDoubleSpinBox*>();
-        if (spinBox)
-            coeffs.append(spinBox->value());
-    }
-
-    // dériver n fois
-    coeffs = derivateCoefficients(coeffs, order);
-
-    // évaluation
-    int n = coeffs.size();
-    for (int i = 0; i < n; i++){
-        res += coeffs[i] * std::pow(x, n - i - 1);
-    }
-
-    return res;
-}
-
-
-QString MainWindow::derivativeToString(const QList<double> &coeffs, int order){
-    QList<double> derived = derivateCoefficients(coeffs, order);
-
-    QString result;
-
-    if (order == 0) result = "f(x) = ";
-    else if (order == 1) result = "f'(x) = ";
-    else result = "f^(" + QString::number(order) + ")(x) = ";
-
-    if (derived.isEmpty()) return result + "0";
-
-    int degree = derived.size();
-    bool firstTerm = true;
-
-    for (int i = 0; i < degree; i++){
-        double coeff = derived[i];
-        int exponent = degree - i - 1;
-
-        if (coeff == 0.0) continue;
-
-        if (!firstTerm)
-            result += (coeff > 0) ? " + " : " - ";
-        else if (coeff < 0)
-            result += "-";
-
-        double absCoeff = std::abs(coeff);
-
-        if (absCoeff != 1.0 || exponent == 0)
-            result += QString::number(absCoeff, 'g', 4);
-
-        if (exponent == 1)
-            result += "x";
-        else if (exponent > 1)
-            result += "x^" + QString::number(exponent);
-
-        firstTerm = false;
-    }
-
-    if (firstTerm) return result + "0";
-    return result;
-}
-
-
-double MainWindow::tangent(double x, double a){
-    return polynomial_derivative(a,1)*(x-a)+polynomial_function(a);
-}
-
 
 //input slots  //todo found a way to put them in one function
 void MainWindow::on_input_min_valueChanged(double arg1)
@@ -518,18 +391,6 @@ void MainWindow::on_box_derivate_first_checkStateChanged(const Qt::CheckState &a
 void MainWindow::on_box_derivate_second_checkStateChanged(const Qt::CheckState &arg1)
 {
     refresh_graph();
-}
-
-
-void MainWindow::move_select_point(){
-    double x = ui->selected_x->value();
-    double y = polynomial_function(x);
-
-    m_selectedPoint->clear();
-    m_selectedPoint->append(x,y);
-
-    ui->selected_y->setValue(y);
-    ui->selected_tangent->setValue(polynomial_derivative(x,1));
 }
 
 

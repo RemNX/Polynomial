@@ -145,7 +145,7 @@
            <height>111</height>
           </rect>
          </property>
-         <layout class="QGridLayout" name="xValueLayout" rowstretch="1,2,0,0,0" columnstretch="1,1">
+         <layout class="QGridLayout" name="xValueLayout" rowstretch="1,2,0,0" columnstretch="1,1">
           <item row="1" column="0">
            <widget class="QLabel" name="label_5">
             <property name="text">
@@ -242,7 +242,7 @@
       <item>
        <widget class="QGroupBox" name="Derivate">
         <property name="title">
-         <string>Derivate</string>
+         <string>Derivative</string>
         </property>
         <widget class="QWidget" name="gridLayoutWidget_2">
          <property name="geometry">
@@ -250,7 +250,7 @@
            <x>10</x>
            <y>30</y>
            <width>261</width>
-           <height>101</height>
+           <height>131</height>
           </rect>
          </property>
          <layout class="QGridLayout" name="gridLayout_2" columnstretch="1,15">
@@ -261,10 +261,36 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="3" column="1">
            <widget class="QLabel" name="derivate_second_output">
             <property name="text">
+             <string>f''(x)=0</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="box_derivate_second">
+            <property name="text">
              <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QDoubleSpinBox" name="selected_der1">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-100000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100000000.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -275,10 +301,36 @@
             </property>
            </widget>
           </item>
+          <item row="4" column="1">
+           <widget class="QDoubleSpinBox" name="selected_der2">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="decimals">
+             <number>5</number>
+            </property>
+            <property name="minimum">
+             <double>-100000000.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>100000000.000000000000000</double>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="0">
-           <widget class="QCheckBox" name="box_derivate_second">
+           <widget class="QLabel" name="label_7">
             <property name="text">
-             <string/>
+             <string>f'(a)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>f''(a)</string>
             </property>
            </widget>
           </item>

@@ -13,6 +13,20 @@ the executable file is in the build/Desktop_QT... folder.
 
 ## Versions
 
+### 1.3 : More functionnality
+- integration border input with visualisation
+- integration value output + primitive equation
+
+<details>
+<summary> sub-version details </summary>
+
+#### 1.3.0
+- 4 new input : start point for the integration, end point, visible line or not, select button for start and end point.
+- Primitive equation display in the new integration section
+- Visible line for the Integration 
+
+</details>
+
 ### 1.2 : Optimization update
 - Separation of functions into different files to improve readability
 - Multiple fixes to prevent memory leaks, unnecessary loops, and improved cache usage
@@ -59,6 +73,7 @@ the executable file is in the build/Desktop_QT... folder.
 ## Objectives
 
 ### for 1.3 : more functionality
+- y=0 line for the graph
 - Add integral visualization
 - Add polynomial root calculation
 - Display local and global extrema

@@ -66,6 +66,13 @@ public:
      */
     void clearCache();
 
+    /**
+     * @brief m_coefficients
+     */
+    QList<double> GetIntegrationCoefficients() const;
+
+    double IntegrationValue(double start, double end) ;
+
 private:
     QList<double> m_coefficients;
     mutable QHash<int, QList<double>>  m_derivativeCache;

@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->box_derivate_first, &QCheckBox::checkStateChanged, this, &MainWindow::refreshGraph);
     connect(ui->box_derivate_second, &QCheckBox::checkStateChanged,  this, &MainWindow::refreshGraph);
     connect(ui->box_tangent, &QCheckBox::checkStateChanged, this, &MainWindow::refreshGraph);
+    connect(ui->visible_integration, &QCheckBox::checkStateChanged,this, &MainWindow::refreshAxes);
 
     on_input_input_valueChanged(1);
 }
@@ -101,16 +102,30 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         m_cursorLine->setLine(QLineF(p1, p2));
     }
 
-    //if clicked
+    //handle mouse click
     else if (event->type() == QEvent::MouseButtonPress) {
         QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
 
         if (mouseEvent->button() == Qt::LeftButton) {
             QPointF value = m_chart->mapToValue(mouseEvent->pos(), m_series);
-            ui->selected_x->setValue(value.x());
+            if (ui->startendbutton->isChecked()){       //if integration button checked
+                if (m_integration_point_counter==0) ui->start_integration_input->setValue(value.x());
+                if (m_integration_point_counter==1) ui->end_integration_input->setValue(value.x());
 
-            move_select_point();
-            refreshGraph();
+                m_integration_point_counter+=1;
+                if (m_integration_point_counter>1) {
+                    ui->startendbutton->setChecked(false);
+                    m_integration_point_counter=0;
+                }
+
+                refreshEquations();
+                refreshAxes();
+            }else{                                      //usual click
+                //update selected x and recompute
+                ui->selected_x->setValue(value.x());
+            }
+
+
         }
 
     }
@@ -185,6 +200,16 @@ void MainWindow::initGraph(){
         m_cursorLine = new QGraphicsLineItem();
         m_cursorLine->setPen(QPen(Qt::cyan, 1, Qt::DashLine));
         m_chart->scene()->addItem(m_cursorLine);
+
+        //add integration delimitation line
+        m_startIntegrationLine = new QGraphicsLineItem();
+        m_startIntegrationLine->setPen(QPen(Qt::black, 1));
+        m_startIntegrationLine->setVisible(false);
+        m_chart->scene()->addItem(m_startIntegrationLine);
+        m_endIntegrationLine = new QGraphicsLineItem();
+        m_endIntegrationLine->setPen(QPen(Qt::black, 1));
+        m_endIntegrationLine->setVisible(false);
+        m_chart->scene()->addItem(m_endIntegrationLine);
     }
 
     ui->display_graph->addWidget(m_chartView);              //add the chart to the layout
@@ -341,6 +366,23 @@ void MainWindow::refreshAxes(){
     //force the axis to include 0
     m_axisX->setTickAnchor(0);
     m_axisY->setTickAnchor(0);
+
+    //integration display
+    if (ui->visible_integration->isChecked()){
+        double startx=ui->start_integration_input->value();
+        double endx=ui->end_integration_input->value();
+        QPointF start1 = m_chart->mapToPosition(QPointF(startx, ymin), m_series);
+        QPointF start2 = m_chart->mapToPosition(QPointF(startx, ymax), m_series);
+        QPointF end1 = m_chart->mapToPosition(QPointF(endx, ymin), m_series);
+        QPointF end2 = m_chart->mapToPosition(QPointF(endx, ymax), m_series);
+        m_startIntegrationLine->setLine(QLineF(start1, start2));
+        m_startIntegrationLine->setVisible(true);
+        m_endIntegrationLine->setLine(QLineF(end1, end2));
+        m_endIntegrationLine->setVisible(true);
+    }else {
+        m_startIntegrationLine->setVisible(false);
+        m_endIntegrationLine->setVisible(false);
+    }
 }
 
 void MainWindow::refreshEquations(){
@@ -358,7 +400,8 @@ void MainWindow::refreshEquations(){
     ui->Title->setText(m_calculator.polynomialToString(coeffs));
     ui->derivate_first_output->setText(m_calculator.polynomialToString(m_calculator.getDerivativeCoefficients(1),1));
     ui->derivate_second_output->setText(m_calculator.polynomialToString(m_calculator.getDerivativeCoefficients(2),2));
-
+    ui->integration_equation_output->setText(m_calculator.polynomialToString(m_calculator.GetIntegrationCoefficients(),-1));
+    ui->integrationvalue_output->setValue(m_calculator.IntegrationValue(ui->start_integration_input->value(),ui->end_integration_input->value()));
 }
 
 void MainWindow::move_select_point(){

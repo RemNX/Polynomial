@@ -57,6 +57,8 @@ private:
     static constexpr int MAX_DEGREE=6;
     static constexpr int NUMBER_POINTS=100;
 
+    int m_integration_point_counter=0;
+
     PolynomialCalculator m_calculator;
 
     Ui::MainWindow *ui;
@@ -73,6 +75,9 @@ private:
     QLineSeries *m_seriestangent;
     QScatterSeries *m_selectedPoint;
     QGraphicsLineItem *m_cursorLine = nullptr;  //vertical line for graph
+    QGraphicsLineItem *m_startIntegrationLine = nullptr;
+    QGraphicsLineItem *m_endIntegrationLine = nullptr;
+
 
 
     /**

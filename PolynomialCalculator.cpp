@@ -59,7 +59,9 @@ double PolynomialCalculator::value(double x, int derivative_order) const{
         coeffs=getCoefficients();
     }else if (derivative_order>0){          //if it is a derived polynomial
         coeffs=getDerivativeCoefficients(derivative_order);
-    }else {                                 //invalid order
+    }else if (derivative_order==-1){         //if its in the integration
+        coeffs=GetIntegrationCoefficients();
+    }else{                                 //invalid order
         qDebug()<<"ERROR : Negative order for derivative";
         return 0.0;
     }
@@ -97,8 +99,14 @@ double PolynomialCalculator::valueTangent(double x, double a) const{
 
 QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs,int order) const{
 
-    //function name f(x), f'(x) or f''(x)
-    QString result = "f" + QString("'").repeated(order) + "(x) = ";
+    //function name f(x), f'(x) or f''(x) or F(x)
+    QString result;
+    if (order<0){
+        result = "F(x) = ";
+    }else {
+        result = "f" + QString("'").repeated(order) + "(x) = ";
+    }
+
 
     if (coeffs.isEmpty()) return result+"0";
 
@@ -129,8 +137,39 @@ QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs,int
         firstTerm = false;
     }
 
+    QString LastTerm;
+    if (order<0){
+        if (firstTerm) LastTerm = "C";
+        else LastTerm = " + C";
+    }else{
+        if (firstTerm) LastTerm = "0";
+    }
 
-    if (firstTerm) return result+"0";
-    return result;
+    return result+LastTerm;
 }
 
+
+QList<double> PolynomialCalculator::GetIntegrationCoefficients() const{
+    QList <double> coeffs=m_coefficients;
+    if (coeffs.isEmpty()) {
+        return {0};
+    }
+
+    int degree=coeffs.size();
+    QList<double> newcoeffs;
+
+    for (int i=0;i<degree;i++){
+        double val=coeffs[i]/(degree-i);
+        newcoeffs.append(val);
+    }
+    newcoeffs.append(0);
+
+    return newcoeffs;
+}
+
+double PolynomialCalculator::IntegrationValue(double start, double end){
+    double start_value = value(start,-1);
+    double end_value = value(end,-1);
+
+    return end_value-start_value;
+}

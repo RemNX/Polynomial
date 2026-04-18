@@ -25,6 +25,10 @@ the executable file is in the build/Desktop_QT... folder.
 - Primitive equation display in the new integration section
 - Visible line for the Integration 
 
+#### 1.3.1
+- new graph object to display the area under the slope (but can't use two differents colors for the positive and negative part)
+- fix the order of display for the differents series (for exemple the cursor point was under the tangent before)
+
 </details>
 
 ### 1.2 : Optimization update

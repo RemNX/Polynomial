@@ -9,6 +9,7 @@
 #include <QtCharts/QChart>
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QChartView>
+#include <QtCharts/QAreaSeries>
 #include <QLayout>
 #include <QSpinBox>
 #include <QLabel>
@@ -73,10 +74,18 @@ private:
     QLineSeries *m_seriesfirst;
     QLineSeries *m_seriessecond;
     QLineSeries *m_seriestangent;
-    QScatterSeries *m_selectedPoint;
+
+    QScatterSeries *m_selectedPoint;    
     QGraphicsLineItem *m_cursorLine = nullptr;  //vertical line for graph
+
+    QLineSeries *m_zeroSeries = nullptr;
+
     QGraphicsLineItem *m_startIntegrationLine = nullptr;
     QGraphicsLineItem *m_endIntegrationLine = nullptr;
+    QLineSeries *m_integrationBaseSeries = nullptr;
+    QLineSeries *m_integrationSeries = nullptr;
+
+    QAreaSeries *m_areaSeries = nullptr;
 
 
 
@@ -130,5 +139,7 @@ private:
      * @return true if there is interaction
      */
     bool eventFilter(QObject *obj, QEvent *event);
+
+    void updateIntegrationArea();
 };
 #endif // MAINWINDOW_H

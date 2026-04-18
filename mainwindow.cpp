@@ -137,14 +137,31 @@ void MainWindow::initGraph(){
     //x and y series
     m_series = new QLineSeries(this);
     m_chart  = new QChart();
+
+    //y=0 line should be first to be under all the other series
+    m_zeroSeries = new QLineSeries();
+    m_zeroSeries->setColor(Qt::black);
+    m_chart->addSeries(m_zeroSeries);
+
+    // area between curve and y=0
+    m_integrationBaseSeries = new QLineSeries();
+    m_integrationBaseSeries->setVisible(false);
+    m_chart->addSeries(m_integrationBaseSeries);
+
+    m_integrationSeries = new QLineSeries(this);
+    m_chart->addSeries(m_integrationSeries);
+
+    m_areaSeries = new QAreaSeries(m_integrationSeries, m_integrationBaseSeries);
+
+
+    QPen pen(Qt::NoPen);
+    m_areaSeries->setPen(pen);
+    m_areaSeries->setBrush(QColor(0, 0, 255, 50));
+
+    m_chart->addSeries(m_areaSeries);
+
     m_series->setName("f(x)");
     m_chart->addSeries(m_series);
-
-    //selected x point
-    m_selectedPoint= new QScatterSeries();
-    m_selectedPoint->setMarkerSize(10);
-    m_chart->addSeries(m_selectedPoint);
-    m_chart->legend()->markers(m_selectedPoint)[0]->setVisible(false);
 
     //first derivative series
     m_seriesfirst = new QLineSeries(this);
@@ -161,10 +178,18 @@ void MainWindow::initGraph(){
     m_seriestangent->setName("tangent");
     m_chart->addSeries(m_seriestangent);
 
+    //selected x point
+    m_selectedPoint= new QScatterSeries();
+    m_selectedPoint->setMarkerSize(10);
+    m_chart->addSeries(m_selectedPoint);
+    m_chart->legend()->markers(m_selectedPoint)[0]->setVisible(false);
+
     m_axisX = new QValueAxis();             //add x axis
     m_axisX->setTitleText("x");
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
 
+    m_zeroSeries->attachAxis(m_axisX);
+    m_areaSeries->attachAxis(m_axisX);
     m_series->attachAxis(m_axisX);
     m_seriesfirst->attachAxis(m_axisX);
     m_selectedPoint->attachAxis(m_axisX);
@@ -175,26 +200,31 @@ void MainWindow::initGraph(){
     m_axisX->setTitleText("x");
     m_axisY->setTitleText("y");
     m_chart->addAxis(m_axisY, Qt::AlignLeft);
+
+    m_zeroSeries->attachAxis(m_axisY);
+    m_areaSeries->attachAxis(m_axisY);
     m_series->attachAxis(m_axisY);
     m_selectedPoint->attachAxis(m_axisY);
     m_seriesfirst->attachAxis(m_axisY);
     m_seriessecond->attachAxis(m_axisY);
     m_seriestangent->attachAxis(m_axisY);
 
+    m_chart->legend()->markers(m_zeroSeries)[0]->setVisible(false);
+    m_chart->legend()->markers(m_integrationBaseSeries)[0]->setVisible(false);
+    m_chart->legend()->markers(m_integrationSeries)[0]->setVisible(false);
+    m_chart->legend()->markers(m_areaSeries)[0]->setVisible(false);
 
+
+    m_zeroSeries->setColor(Qt::black);
     m_series->setColor(Qt::blue);
     m_selectedPoint->setColor(Qt::magenta);
     m_seriesfirst->setColor(Qt::red);
     m_seriessecond->setColor(Qt::green);
     m_seriestangent->setColor(Qt::yellow);
 
+
     m_chartView = new QChartView(m_chart, this);            //render the chart
     m_chartView->setRenderHint(QPainter::Antialiasing);
-
-    //part to get mouse position value
-    m_chartView->setMouseTracking(true);
-    m_chartView->viewport()->setMouseTracking(true);
-    m_chartView->viewport()->installEventFilter(this);
 
     if (m_chart && m_chart->scene()) {
         m_cursorLine = new QGraphicsLineItem();
@@ -206,11 +236,17 @@ void MainWindow::initGraph(){
         m_startIntegrationLine->setPen(QPen(Qt::black, 1));
         m_startIntegrationLine->setVisible(false);
         m_chart->scene()->addItem(m_startIntegrationLine);
+
         m_endIntegrationLine = new QGraphicsLineItem();
         m_endIntegrationLine->setPen(QPen(Qt::black, 1));
         m_endIntegrationLine->setVisible(false);
         m_chart->scene()->addItem(m_endIntegrationLine);
     }
+
+    //part to get mouse position value
+    m_chartView->setMouseTracking(true);
+    m_chartView->viewport()->setMouseTracking(true);
+    m_chartView->viewport()->installEventFilter(this);
 
     ui->display_graph->addWidget(m_chartView);              //add the chart to the layout
 
@@ -334,6 +370,7 @@ void MainWindow::refreshAxes(){
         [](const QPointF &a, const QPointF &b) { return a.y() < b.y(); }
         );
 
+
     //apply the axis limit
     //if the degree is 0, adjust y min and max for visibility
     double ymin=minIt->y();
@@ -343,6 +380,7 @@ void MainWindow::refreshAxes(){
         ymin=ymin-5;
         ymax=ymax+5;
     }
+
 
     m_axisX->setRange(xmin, xmax);
     m_axisY->setRange(ymin, ymax);
@@ -367,6 +405,14 @@ void MainWindow::refreshAxes(){
     m_axisX->setTickAnchor(0);
     m_axisY->setTickAnchor(0);
 
+    //y=0 line
+    QList<QPointF> zeroPoints;
+    zeroPoints.append(QPointF(xmin, 0));
+    zeroPoints.append(QPointF(xmax, 0));
+
+    m_zeroSeries->replace(zeroPoints);
+    m_zeroSeries->setVisible(ymin <= 0 && ymax >= 0);
+
     //integration display
     if (ui->visible_integration->isChecked()){
         double startx=ui->start_integration_input->value();
@@ -379,9 +425,14 @@ void MainWindow::refreshAxes(){
         m_startIntegrationLine->setVisible(true);
         m_endIntegrationLine->setLine(QLineF(end1, end2));
         m_endIntegrationLine->setVisible(true);
+
+        updateIntegrationArea();
+        m_areaSeries->setVisible(true);
     }else {
         m_startIntegrationLine->setVisible(false);
         m_endIntegrationLine->setVisible(false);
+
+        m_areaSeries->setVisible(false);
     }
 }
 
@@ -433,6 +484,31 @@ void MainWindow::updateCalculatorCoefficients(){
     m_calculator.setCoefficients(coeffs);
 }
 
+void MainWindow::updateIntegrationArea(){
+    double start = ui->start_integration_input->value();
+    double end   = ui->end_integration_input->value();
+
+    if (start > end)
+        std::swap(start, end);
+
+    QVector<QPointF> top;
+    QVector<QPointF> bottom;
+
+    int N = NUMBER_POINTS;
+    double step = (end - start) / (N - 1);
+
+    for (int i = 0; i < N; i++) {
+        double x = start + i * step;
+        double y = m_calculator.value(x);
+
+        top.append(QPointF(x,y));
+        bottom.append(QPointF(x,0));
+
+    }
+
+    m_integrationSeries->replace(top);
+    m_integrationBaseSeries->replace(bottom);
+}
 
 //input slots
 void MainWindow::on_input_input_valueChanged(int value){

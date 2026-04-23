@@ -348,7 +348,7 @@
           <rect>
            <x>0</x>
            <y>20</y>
-           <width>281</width>
+           <width>310</width>
            <height>111</height>
           </rect>
          </property>
@@ -376,10 +376,13 @@
                  <number>5</number>
                 </property>
                 <property name="minimum">
-                 <double>-100000000.000000000000000</double>
+                 <double>-100.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>100000000.000000000000000</double>
+                 <double>100.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.100000000000000</double>
                 </property>
                </widget>
               </item>
@@ -415,10 +418,10 @@
                  <number>5</number>
                 </property>
                 <property name="minimum">
-                 <double>-1000.000000000000000</double>
+                 <double>-100.000000000000000</double>
                 </property>
                 <property name="maximum">
-                 <double>1000.000000000000000</double>
+                 <double>100.000000000000000</double>
                 </property>
                 <property name="singleStep">
                  <double>0.100000000000000</double>
@@ -471,6 +474,26 @@
            </widget>
           </item>
          </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>Roots</string>
+        </property>
+        <widget class="QTableView" name="roots_table">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>20</y>
+           <width>281</width>
+           <height>141</height>
+          </rect>
+         </property>
+         <attribute name="horizontalHeaderVisible">
+          <bool>false</bool>
+         </attribute>
         </widget>
        </widget>
       </item>

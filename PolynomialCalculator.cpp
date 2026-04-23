@@ -173,3 +173,96 @@ double PolynomialCalculator::IntegrationValue(double start, double end){
 
     return end_value-start_value;
 }
+
+QList<double> PolynomialCalculator::ApproximateX0(QLineSeries *series){
+    QList<double> coeffs = getCoefficients();
+    bool rootable = false;
+    for (int i=0; i<coeffs.size()-1;i++){       //if there is only zero for all coefficient except the constant one there is not root value
+        if (coeffs[i]!=0){
+            rootable=true;
+            break;
+        }
+    }
+    if (!rootable){
+        return QList<double>();
+    }
+
+    QList<double> res;
+    QList<QPointF> pts = series->points();
+    for (int i=1;i<pts.size();i++) {
+        QPointF point1=pts[i-1];
+        QPointF point2=pts[i];
+
+        double eps = 1e-5;
+
+        //if change of sign -> there is an y=0
+        if (point1.y() * point2.y() < 0.0) {
+            double x0 = point1.x() - point2.y() * (point2.x() - point1.x()) / (point2.y() - point1.y()); // interpolation linéaire
+            res.append(x0);
+        }
+
+        //if a point is really close to zero -> if a boundarie is close to the root
+        else if (fabs(point1.y()) < eps) {
+            res.append(point1.x());
+        }
+
+        //if a point is really close to zero but his neighboor are not -> a local extremum
+        if (i > 0 && i < pts.size() - 1) {
+            double y_prev = pts[i-1].y();
+            double y_curr = pts[i].y();
+            double y_next = pts[i+1].y();
+
+            if (fabs(y_curr) < eps &&
+                fabs(y_curr) < fabs(y_prev) &&
+                fabs(y_curr) < fabs(y_next)) {
+
+                res.append(pts[i].x());
+            }
+        }
+    }
+    return res;
+}
+
+double PolynomialCalculator::RootNewton(double x0){
+    double x = x0;
+    for (int loop=0;loop<MAX_ROOT_LOOP;loop++){
+        double fx = value(x);
+        double dfx = value(x,1);
+
+        if (fabs(dfx) < 1e-12) {
+            x += 1e-6;
+            continue;
+        }
+
+        double xplus1=x-fx/dfx;
+        if (fabs(xplus1-x)<ROOT_PRECISION){
+            return xplus1;}
+
+        x=xplus1;
+    }
+    return x;
+}
+
+QList<double> PolynomialCalculator::AllRoot(QList<double> x0_list){
+    QList<double> res;
+    for (double x0 : x0_list){
+
+        double newton_x0 = RootNewton(x0);
+
+        //if close to zero
+        if (fabs(newton_x0) <1e-8){
+            newton_x0=0;
+        }
+
+        //check if this root already in the list
+        bool exist=false;
+        for (double val : res){     //todo use this format for other for loop !!
+            if (fabs(val-newton_x0)<1e-5){
+                exist=true;
+                break;
+            }
+        }
+        if (!exist) res.append(newton_x0);
+    }
+    return res;
+}

@@ -14,6 +14,8 @@
 #include <QSpinBox>
 #include <QLabel>
 #include <QLegendMarker>
+#include <QDoubleSpinBox>
+#include <QStandardItemModel>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -56,7 +58,7 @@ private slots:
 
 private:
     static constexpr int MAX_DEGREE=6;
-    static constexpr int NUMBER_POINTS=100;
+    static constexpr int NUMBER_POINTS=1000;
 
     int m_integration_point_counter=0;
 

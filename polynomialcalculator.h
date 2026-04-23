@@ -4,6 +4,7 @@
 #include <QString>
 #include <QList>
 #include <QDebug>
+#include <QLineSeries>
 
 class PolynomialCalculator
 {
@@ -67,13 +68,42 @@ public:
     void clearCache();
 
     /**
-     * @brief m_coefficients
+     * @brief get the cofficients value for the like ax^n -> (a/n+1)x^(n+1)
      */
     QList<double> GetIntegrationCoefficients() const;
 
-    double IntegrationValue(double start, double end) ;
+    /**
+     * @brief get the integration value from a range of the polynomial function
+     * @param start point of the integration
+     * @param end point of the integration
+     * @return a double value of the integration
+     */
+    double IntegrationValue(double start, double end);
+
+    /**
+     * @brief Approximate the x value of a series where x=0, only use the points of the serie so more point = more precision but never perfect
+     * @param series of x,y point
+     * @return a list of all the x0 point (some can be duplicates)
+     */
+    QList<double> ApproximateX0(QLineSeries *series);
+
+    /**
+     * @brief calculate the y=0 (root) value of an x0 by the newton method
+     * @param x0 point close to y=0 can be determined with the approximateX0(series) function
+     * @return a really precise value of the root
+     */
+    double RootNewton(double x0);
+
+    /**
+     * @brief search all roots value of a list of x0 (remove the duplicate and approximate x=0
+     * @param x0_list can be obtained with the function ApproximateX0(series)
+     * @return a list of all roots value of the polynomial function
+     */
+    QList<double>AllRoot(QList<double> x0_list);
 
 private:
+    static constexpr double ROOT_PRECISION=1e-10;
+    static constexpr int MAX_ROOT_LOOP=50;
     QList<double> m_coefficients;
     mutable QHash<int, QList<double>>  m_derivativeCache;
 };

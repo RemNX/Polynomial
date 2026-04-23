@@ -15,6 +15,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->box_derivate_second, &QCheckBox::checkStateChanged,  this, &MainWindow::refreshGraph);
     connect(ui->box_tangent, &QCheckBox::checkStateChanged, this, &MainWindow::refreshGraph);
     connect(ui->visible_integration, &QCheckBox::checkStateChanged,this, &MainWindow::refreshAxes);
+    connect(ui->start_integration_input, &QDoubleSpinBox::valueChanged, this, &MainWindow::refreshAxes);
+    connect(ui->end_integration_input, &QDoubleSpinBox::valueChanged,this, &MainWindow::refreshAxes);
 
     on_input_input_valueChanged(1);
 }
@@ -352,6 +354,20 @@ void MainWindow::refreshSeries(){
     m_seriesfirst->replace(newPointsFirst);
     m_seriessecond->replace(newPointsSecond);
     m_seriestangent->replace(newPointsTangent);
+
+    //part to determine roots
+    QStandardItemModel *model = new QStandardItemModel(this);
+    model->setColumnCount(1);
+    model->setHeaderData(0, Qt::Horizontal, "roots");
+
+    QList<double> roots_list = m_calculator.AllRoot(m_calculator.ApproximateX0(m_series));
+    model->setRowCount(roots_list.size());
+
+    for (int i=0; i<roots_list.size();i++){
+        QStandardItem *item = new QStandardItem(QString::number(roots_list[i], 'f', 10));
+        model->setItem(i, 0, item);
+    }
+    ui->roots_table->setModel(model);
 }
 
 void MainWindow::refreshAxes(){

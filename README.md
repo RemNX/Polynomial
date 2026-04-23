@@ -13,9 +13,11 @@ the executable file is in the build/Desktop_QT... folder.
 
 ## Versions
 
+
 ### 1.3 : More functionnality
 - integration border input with visualisation
 - integration value output + primitive equation
+- roots value for the polynomial function
 
 <details>
 <summary> sub-version details </summary>
@@ -28,6 +30,11 @@ the executable file is in the build/Desktop_QT... folder.
 #### 1.3.1
 - new graph object to display the area under the slope (but can't use two differents colors for the positive and negative part)
 - fix the order of display for the differents series (for exemple the cursor point was under the tangent before)
+
+### 1.3.2
+- new roots value display and calculation
+- 3 new function for the calculator : approximateX0, RootNewton, AllRoot
+- new function descriptions for the last 5 functions
 
 </details>
 
@@ -77,10 +84,10 @@ the executable file is in the build/Desktop_QT... folder.
 ## Objectives
 
 ### for 1.3 : more functionality
-- y=0 line for the graph
-- Add integral visualization
-- Add polynomial root calculation
 - Display local and global extrema
+- button in roots group to display each point on the graph with their number
+- way to disable the automatic ymin and ymax to manually input
+- zoom button
 
 ### for 1.4 : more documentation 
 - Access the README directly within the app

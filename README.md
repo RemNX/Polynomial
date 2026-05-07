@@ -36,6 +36,12 @@ the executable file is in the build/Desktop_QT... folder.
 - 3 new function for the calculator : approximateX0, RootNewton, AllRoot
 - new function descriptions for the last 5 functions
 
+### 1.3.3 
+- added values of the local extremas
+- added manual input for ymin and ymax with a checkable box
+- fixed integrate equations font to be visible for high degree one
+
+
 </details>
 
 ### 1.2 : Optimization update
@@ -84,9 +90,6 @@ the executable file is in the build/Desktop_QT... folder.
 ## Objectives
 
 ### for 1.3 : more functionality
-- Display local and global extrema
-- button in roots group to display each point on the graph with their number
-- way to disable the automatic ymin and ymax to manually input
 - zoom button
 
 ### for 1.4 : more documentation 

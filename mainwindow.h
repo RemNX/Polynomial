@@ -56,6 +56,12 @@ private slots:
      */
     void on_input_max_valueChanged(double value);
 
+    void on_manual_y_limit_stateChanged(int arg1);
+
+    void on_input_ymin_valueChanged(double value);
+
+    void on_input_ymax_valueChanged(double value);
+
 private:
     static constexpr int MAX_DEGREE=6;
     static constexpr int NUMBER_POINTS=1000;

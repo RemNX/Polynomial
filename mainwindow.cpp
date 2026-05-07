@@ -17,7 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->visible_integration, &QCheckBox::checkStateChanged,this, &MainWindow::refreshAxes);
     connect(ui->start_integration_input, &QDoubleSpinBox::valueChanged, this, &MainWindow::refreshAxes);
     connect(ui->end_integration_input, &QDoubleSpinBox::valueChanged,this, &MainWindow::refreshAxes);
-
     on_input_input_valueChanged(1);
 }
 
@@ -335,11 +334,9 @@ void MainWindow::refreshSeries(){
     for (int i = 0; i < NUMBER_POINTS; i++) {
         double x = xmin + i * step;
         newPoints.append(QPointF(x, m_calculator.value(x)));
+        newPointsFirst.append(QPointF(x, m_calculator.value(x, 1)));    //first derivative should always be calculated for the extremas but not alwasy displayed
 
-        //if the first or second derivative should be displayed
-        if (ui->box_derivate_first->isChecked()) {
-            newPointsFirst.append(QPointF(x, m_calculator.value(x, 1)));
-        }
+        //if thz second derivative should be displayed
         if (ui->box_derivate_second->isChecked()) {
             newPointsSecond.append(QPointF(x, m_calculator.value(x, 2)));
         }
@@ -350,8 +347,12 @@ void MainWindow::refreshSeries(){
         }
     }
 
+    if (ui->box_derivate_first->isChecked()) {      //first derivative should always be calculated for the extremas but not alwasy displayed
+        m_seriesfirst->replace(newPointsFirst);
+    }else{
+        m_seriesfirst->replace({});
+    }
     m_series->replace(newPoints);
-    m_seriesfirst->replace(newPointsFirst);
     m_seriessecond->replace(newPointsSecond);
     m_seriestangent->replace(newPointsTangent);
 
@@ -360,14 +361,30 @@ void MainWindow::refreshSeries(){
     model->setColumnCount(1);
     model->setHeaderData(0, Qt::Horizontal, "roots");
 
-    QList<double> roots_list = m_calculator.AllRoot(m_calculator.ApproximateX0(m_series));
+    QList<double> roots_list = m_calculator.AllXO(m_calculator.ApproximateX0(newPoints),0);
     model->setRowCount(roots_list.size());
 
     for (int i=0; i<roots_list.size();i++){
-        QStandardItem *item = new QStandardItem(QString::number(roots_list[i], 'f', 10));
+        QStandardItem *item = new QStandardItem(QString::number(roots_list[i], 'f', 6));
         model->setItem(i, 0, item);
     }
     ui->roots_table->setModel(model);
+
+
+    //part to determine extrema
+    QStandardItemModel *model_extr = new QStandardItemModel(this);
+    model_extr->setColumnCount(1);
+    model_extr->setHeaderData(0, Qt::Horizontal, "extremas");
+
+    QList<double> extrema_list = m_calculator.AllXO(m_calculator.ApproximateX0(newPointsFirst),1);
+    model_extr->setRowCount(extrema_list.size());
+
+    for (int i=0; i<extrema_list.size();i++){
+        QStandardItem *item = new QStandardItem(QString::number(extrema_list[i], 'f', 6));
+        model_extr->setItem(i, 0, item);
+    }
+    ui->extrema_table->setModel(model_extr);
+
 }
 
 void MainWindow::refreshAxes(){
@@ -380,21 +397,35 @@ void MainWindow::refreshAxes(){
         return;
     }
 
-    //get y min and max values
-    auto [minIt, maxIt] = std::minmax_element(
-        newPoints.begin(), newPoints.end(),
-        [](const QPointF &a, const QPointF &b) { return a.y() < b.y(); }
-        );
+    double ymin;
+    double ymax;
+    if (ui->manual_y_limit->isChecked()){
+        ymin=ui->input_ymin->value();
+        ymax=ui->input_ymax->value();
+    }else {
+        //get y min and max values
+        auto [minIt, maxIt] = std::minmax_element(
+            newPoints.begin(), newPoints.end(),
+            [](const QPointF &a, const QPointF &b) { return a.y() < b.y(); }
+            );
 
 
-    //apply the axis limit
-    //if the degree is 0, adjust y min and max for visibility
-    double ymin=minIt->y();
-    double ymax=maxIt->y();
+        //apply the axis limit
+        //if the degree is 0, adjust y min and max for visibility
+        ymin=minIt->y();
+        ymax=maxIt->y();
 
-    if (ymin==ymax){
-        ymin=ymin-5;
-        ymax=ymax+5;
+        if (ymin==ymax){
+            ymin=ymin-5;
+            ymax=ymax+5;
+        }
+
+        ui->input_ymin->blockSignals(true);
+        ui->input_ymax->blockSignals(true);
+        ui->input_ymin->setValue(ymin);
+        ui->input_ymax->setValue(ymax);
+        ui->input_ymin->blockSignals(false);
+        ui->input_ymax->blockSignals(false);
     }
 
 
@@ -546,13 +577,46 @@ void MainWindow::on_input_min_valueChanged(double value) {
     if (value >= ui->input_max->value()) {
         ui->input_max->setValue(value+1);
     }
-    refreshGraph();
+    refreshSeries();
+    refreshAxes();
 }
 
 void MainWindow::on_input_max_valueChanged(double value) {
     if (value <= ui->input_min->value()) {
         ui->input_min->setValue(value-1);
     }
-    refreshGraph();
+    refreshSeries();
+    refreshAxes();
+}
+
+void MainWindow::on_manual_y_limit_stateChanged(int arg1)
+{
+    if (arg1==2){
+        ui->grid_Y_limit->setEnabled(true);
+    }else{
+        ui->grid_Y_limit->setEnabled(false);
+    }
+    refreshSeries();
+    refreshAxes();
+}
+
+
+void MainWindow::on_input_ymin_valueChanged(double value)
+{
+    if (value >= ui->input_ymax->value()) {
+        ui->input_ymax->setValue(value+.1);
+    }
+    refreshSeries();
+    refreshAxes();
+}
+
+
+void MainWindow::on_input_ymax_valueChanged(double value)
+{
+    if (value <= ui->input_ymin->value()) {
+        ui->input_ymin->setValue(value-.1);
+    }
+    refreshSeries();
+    refreshAxes();
 }
 

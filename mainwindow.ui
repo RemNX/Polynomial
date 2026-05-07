@@ -6,74 +6,226 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1220</width>
-    <height>729</height>
+    <width>1284</width>
+    <height>741</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="16,5">
+   <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="16,6">
     <item>
-     <layout class="QVBoxLayout" name="graph_part" stretch="1,20,2">
+     <layout class="QVBoxLayout" name="graph_part" stretch="1,14,1">
+      <property name="spacing">
+       <number>2</number>
+      </property>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="10,1">
+       <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="2,0,1,1">
         <item>
          <widget class="QLabel" name="Title">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
         <item>
-         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="0,0">
-          <item row="1" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>max</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_3">
-            <property name="text">
-             <string>min</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QDoubleSpinBox" name="input_min">
-            <property name="minimum">
-             <double>-100.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>100.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>-4.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QDoubleSpinBox" name="input_max">
-            <property name="minimum">
-             <double>-100.000000000000000</double>
-            </property>
-            <property name="maximum">
-             <double>100.000000000000000</double>
-            </property>
-            <property name="value">
-             <double>4.000000000000000</double>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QCheckBox" name="manual_y_limit">
+          <property name="text">
+           <string>manual Y limit</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="grid_Y_limit">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>1000</height>
+           </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::Box</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_Y_limit">
+           <property name="leftMargin">
+            <number>2</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>2</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_9">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Ymax</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="input_ymin">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="minimum">
+              <double>-100000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="input_ymax">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="minimum">
+              <double>-100000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_13">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>20</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Ymin</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="grid_X_limit">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>1000</height>
+           </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::Box</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="0,0,0">
+           <property name="leftMargin">
+            <number>2</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>2</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+           <property name="spacing">
+            <number>2</number>
+           </property>
+           <item row="0" column="2">
+            <widget class="QDoubleSpinBox" name="input_min">
+             <property name="minimum">
+              <double>-100.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>-4.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Xmin</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Xmax</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QDoubleSpinBox" name="input_max">
+             <property name="minimum">
+              <double>-100.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>4.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="display_graph"/>
+       <layout class="QVBoxLayout" name="display_graph">
+        <property name="spacing">
+         <number>2</number>
+        </property>
+       </layout>
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,10">
@@ -348,7 +500,7 @@
           <rect>
            <x>0</x>
            <y>20</y>
-           <width>310</width>
+           <width>331</width>
            <height>111</height>
           </rect>
          </property>
@@ -468,6 +620,11 @@
           </item>
           <item>
            <widget class="QLabel" name="integration_equation_output">
+            <property name="font">
+             <font>
+              <pointsize>7</pointsize>
+             </font>
+            </property>
             <property name="text">
              <string>F(x)=C</string>
             </property>
@@ -480,20 +637,33 @@
       <item>
        <widget class="QGroupBox" name="groupBox">
         <property name="title">
-         <string>Roots</string>
+         <string>Roots and extremas</string>
         </property>
-        <widget class="QTableView" name="roots_table">
+        <widget class="QWidget" name="horizontalLayoutWidget">
          <property name="geometry">
           <rect>
-           <x>0</x>
-           <y>20</y>
-           <width>281</width>
-           <height>141</height>
+           <x>9</x>
+           <y>29</y>
+           <width>321</width>
+           <height>131</height>
           </rect>
          </property>
-         <attribute name="horizontalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QTableView" name="roots_table">
+            <attribute name="horizontalHeaderVisible">
+             <bool>false</bool>
+            </attribute>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTableView" name="extrema_table">
+            <attribute name="horizontalHeaderVisible">
+             <bool>false</bool>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>
@@ -506,7 +676,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1220</width>
+     <width>1284</width>
      <height>21</height>
     </rect>
    </property>

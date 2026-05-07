@@ -85,21 +85,21 @@ public:
      * @param series of x,y point
      * @return a list of all the x0 point (some can be duplicates)
      */
-    QList<double> ApproximateX0(QLineSeries *series);
+    QList<double> ApproximateX0(QList<QPointF> series);
 
     /**
      * @brief calculate the y=0 (root) value of an x0 by the newton method
      * @param x0 point close to y=0 can be determined with the approximateX0(series) function
      * @return a really precise value of the root
      */
-    double RootNewton(double x0);
+    double Newton(double x0,int derivative_order);
 
     /**
      * @brief search all roots value of a list of x0 (remove the duplicate and approximate x=0
      * @param x0_list can be obtained with the function ApproximateX0(series)
      * @return a list of all roots value of the polynomial function
      */
-    QList<double>AllRoot(QList<double> x0_list);
+    QList<double>AllXO(QList<double> x0_list,int derivative_order);
 
 private:
     static constexpr double ROOT_PRECISION=1e-10;

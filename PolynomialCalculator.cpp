@@ -127,7 +127,7 @@ QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs,int
         double absCoeff = std::abs(coeff);
 
         if (absCoeff != 1.0 || exponent == 0)
-            result += QString::number(absCoeff, 'g', 4); // 4 decimal number
+            result += QString::number(absCoeff, 'g', 3); // 4 decimal number
 
         if (exponent == 1)              //if it is the second-to-last coefficient
             result += "x";
@@ -174,7 +174,7 @@ double PolynomialCalculator::IntegrationValue(double start, double end){
     return end_value-start_value;
 }
 
-QList<double> PolynomialCalculator::ApproximateX0(QLineSeries *series){
+QList<double> PolynomialCalculator::ApproximateX0(QList<QPointF> series){
     QList<double> coeffs = getCoefficients();
     bool rootable = false;
     for (int i=0; i<coeffs.size()-1;i++){       //if there is only zero for all coefficient except the constant one there is not root value
@@ -188,10 +188,9 @@ QList<double> PolynomialCalculator::ApproximateX0(QLineSeries *series){
     }
 
     QList<double> res;
-    QList<QPointF> pts = series->points();
-    for (int i=1;i<pts.size();i++) {
-        QPointF point1=pts[i-1];
-        QPointF point2=pts[i];
+    for (int i=1;i<series.size();i++) {
+        QPointF point1=series[i-1];
+        QPointF point2=series[i];
 
         double eps = 1e-5;
 
@@ -207,27 +206,27 @@ QList<double> PolynomialCalculator::ApproximateX0(QLineSeries *series){
         }
 
         //if a point is really close to zero but his neighboor are not -> a local extremum
-        if (i > 0 && i < pts.size() - 1) {
-            double y_prev = pts[i-1].y();
-            double y_curr = pts[i].y();
-            double y_next = pts[i+1].y();
+        if (i > 0 && i < series.size() - 1) {
+            double y_prev = series[i-1].y();
+            double y_curr = series[i].y();
+            double y_next = series[i+1].y();
 
             if (fabs(y_curr) < eps &&
                 fabs(y_curr) < fabs(y_prev) &&
                 fabs(y_curr) < fabs(y_next)) {
 
-                res.append(pts[i].x());
+                res.append(series[i].x());
             }
         }
     }
     return res;
 }
 
-double PolynomialCalculator::RootNewton(double x0){
+double PolynomialCalculator::Newton(double x0,int derivative_order){
     double x = x0;
     for (int loop=0;loop<MAX_ROOT_LOOP;loop++){
-        double fx = value(x);
-        double dfx = value(x,1);
+        double fx = value(x,derivative_order);
+        double dfx = value(x,derivative_order+1);
 
         if (fabs(dfx) < 1e-12) {
             x += 1e-6;
@@ -243,11 +242,11 @@ double PolynomialCalculator::RootNewton(double x0){
     return x;
 }
 
-QList<double> PolynomialCalculator::AllRoot(QList<double> x0_list){
+QList<double> PolynomialCalculator::AllXO(QList<double> x0_list,int derivative_order){
     QList<double> res;
     for (double x0 : x0_list){
 
-        double newton_x0 = RootNewton(x0);
+        double newton_x0 = Newton(x0, derivative_order);
 
         //if close to zero
         if (fabs(newton_x0) <1e-8){

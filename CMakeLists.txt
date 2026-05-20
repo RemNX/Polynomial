@@ -26,6 +26,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         README.md
         polynomialcalculator.h
         PolynomialCalculator.cpp
+        types.h
 
 
 

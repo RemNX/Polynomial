@@ -4,12 +4,28 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-
+    , m_chartView(nullptr)
+    , m_chart(nullptr)
+    , m_axisX(nullptr)
+    , m_axisY(nullptr)
+    , m_series(nullptr)
+    , m_seriesfirst(nullptr)
+    , m_seriessecond(nullptr)
+    , m_seriestangent(nullptr)
+    , m_selectedPoint(nullptr)
+    , m_cursorLine(nullptr)
+    , m_zeroSeries(nullptr)
+    , m_startIntegrationLine(nullptr)
+    , m_endIntegrationLine(nullptr)
+    , m_integrationBaseSeries(nullptr)
+    , m_integrationSeries(nullptr)
+    , m_areaSeries(nullptr)
+    , m_zoomMode(false)
+    , m_zoomClickCount(0)
 {
     ui->setupUi(this);
     //init chart and UI
     initGraph();
-
 
     connect(ui->box_derivate_first, &QCheckBox::checkStateChanged, this, &MainWindow::refreshGraph);
     connect(ui->box_derivate_second, &QCheckBox::checkStateChanged,  this, &MainWindow::refreshGraph);
@@ -33,17 +49,15 @@ void MainWindow::clearLayout(QLayout *layout)
 
     //recursive call
     QLayoutItem *item;
-    while ((item = layout->takeAt(0)) != nullptr) //remove the first element until none remain
-    {
-        if (item->widget())         //if it is a simple widget, remove it
+    while ((item = layout->takeAt(0)) != nullptr) {      //remove the first element until none remain
+        if (QWidget *widget = item->widget()) {         //if it is a simple widget, remove it
+            input_list.removeOne(widget);
             item->widget()->deleteLater();
-
+        }
         else if (item->layout())    //if it is a nested layout, clear and remove it
         {
             clearLayout(item->layout());
-            delete item->layout();
         }
-
         delete item;
     }
 }
@@ -59,6 +73,9 @@ void MainWindow::clearLayout(QLayout *layout)
  */
 double niceStep(double range)
 {
+    if (range <= 0.0) //prevent negative or 0 value
+        return 1.0;
+
     double step = range / 10.0; //get step size for 10 values
 
     double exponent = std::floor(std::log10(step));     //get the order of magnitude
@@ -79,6 +96,9 @@ double niceStep(double range)
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    if (!m_chartView || !m_chartView->viewport()){  //check if the graph exist
+        return QObject::eventFilter(obj, event);
+    }
     //handle mouse movement
     if (obj == m_chartView->viewport() && event->type() == QEvent::MouseMove){
         QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
@@ -100,6 +120,12 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         //draw a vertical line
         QPointF p1 = m_chart->mapToPosition(QPointF(x, yMin), m_series);
         QPointF p2 = m_chart->mapToPosition(QPointF(x, yMax), m_series);
+
+        if (m_cursorLine) {
+            QPointF p1 = m_chart->mapToPosition(QPointF(x, yMin), m_series);
+            QPointF p2 = m_chart->mapToPosition(QPointF(x, yMax), m_series);
+            m_cursorLine->setLine(QLineF(p1, p2));
+        }
         m_cursorLine->setLine(QLineF(p1, p2));
     }
 
@@ -109,7 +135,34 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
         if (mouseEvent->button() == Qt::LeftButton) {
             QPointF value = m_chart->mapToValue(mouseEvent->pos(), m_series);
-            if (ui->startendbutton->isChecked()){       //if integration button checked
+            if (m_zoomMode) {
+                if (m_zoomClickCount == 0) {
+                    // Premier clic
+                    m_firstZoomPoint = value;
+                    m_zoomClickCount = 1;
+
+                    // Optionnel : afficher un message temporaire
+                    ui->point_value_output->setText(
+                        QString("Zoom: Premier point sélectionné (x=%1, y=%2) - Cliquez pour le second point")
+                            .arg(m_firstZoomPoint.x(), 0, 'f', 2)
+                            .arg(m_firstZoomPoint.y(), 0, 'f', 2)
+                        );
+                }
+                else if (m_zoomClickCount == 1) {
+                    // Deuxième clic
+                    QPointF secondZoomPoint = value;
+                    m_zoomClickCount = 0;
+                    m_zoomMode = false;
+
+                    // Appliquer le zoom sur la région sélectionnée
+                    applyZoomRegion(m_firstZoomPoint, secondZoomPoint);
+
+                    // Désactiver visuellement le bouton
+                    ui->zoom_button->setChecked(false);
+                    m_chartView->viewport()->setCursor(Qt::ArrowCursor);
+                }
+            }
+            else if (ui->startendbutton->isChecked()){       //if integration button checked
                 if (m_integration_point_counter==0) ui->start_integration_input->setValue(value.x());
                 if (m_integration_point_counter==1) ui->end_integration_input->setValue(value.x());
 
@@ -119,19 +172,43 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
                     m_integration_point_counter=0;
                 }
 
+
                 refreshEquations();
                 refreshAxes();
             }else{                                      //usual click
                 //update selected x and recompute
                 ui->selected_x->setValue(value.x());
             }
-
-
         }
-
     }
 
     return QObject::eventFilter(obj, event);
+}
+
+void MainWindow::applyZoomRegion(const QPointF& p1, const QPointF& p2)
+{
+    double xmin = qMin(p1.x(), p2.x());
+    double xmax = qMax(p1.x(), p2.x());
+    double ymin = qMin(p1.y(), p2.y());
+    double ymax = qMax(p1.y(), p2.y());
+
+    double xMargin = (xmax - xmin) * UIConstants::ZOOM_MARGIN_FACTOR;
+    double yMargin = (ymax - ymin) * UIConstants::ZOOM_MARGIN_FACTOR;
+
+    xmin -= xMargin;
+    xmax += xMargin;
+    ymin -= yMargin;
+    ymax += yMargin;
+
+    ui->input_min->setValue(xmin);
+    ui->input_max->setValue(xmax);
+
+    ui->manual_y_limit->setChecked(true);
+    ui->input_ymin->setValue(ymin);
+    ui->input_ymax->setValue(ymax);
+
+    refreshSeries();
+    refreshAxes();
 }
 
 void MainWindow::initGraph(){
@@ -140,12 +217,12 @@ void MainWindow::initGraph(){
     m_chart  = new QChart();
 
     //y=0 line should be first to be under all the other series
-    m_zeroSeries = new QLineSeries();
+    m_zeroSeries = new QLineSeries(this);
     m_zeroSeries->setColor(Qt::black);
     m_chart->addSeries(m_zeroSeries);
 
     // area between curve and y=0
-    m_integrationBaseSeries = new QLineSeries();
+    m_integrationBaseSeries = new QLineSeries(this);
     m_integrationBaseSeries->setVisible(false);
     m_chart->addSeries(m_integrationBaseSeries);
 
@@ -256,7 +333,7 @@ void MainWindow::initGraph(){
     QBoxLayout *input_layout = ui->input_layout;
     clearLayout(input_layout);
 
-    for (int i = 0; i < MAX_DEGREE; i++) {
+    for (int i = 0; i < UIConstants::MAX_DEGREE; i++) {
         QFrame *frame = new QFrame(this);
         input_list.append(frame);
 
@@ -278,18 +355,23 @@ void MainWindow::initGraph(){
         slider->setMaximum(100);
 
         connect(slider, &QSlider::valueChanged, this, [=](int v) {
+            box->blockSignals(true);
             box->setValue(v / 10.0);
+            box->blockSignals(false);
+            refreshGraph();
         });
         connect(box, QOverload<double>::of(&QDoubleSpinBox::valueChanged),this, [=](double d) {
+            slider->blockSignals(true);
             slider->setValue(d * 10);
+            slider->blockSignals(false);
             refreshGraph();
         });
 
         //x value
         QLabel *test = new QLabel();
-        if (i==MAX_DEGREE-1){test->setText("x1");}
-        else if (i==MAX_DEGREE-2){test->setText("x");}
-        else {test->setText("x^"+QString::number(MAX_DEGREE-i-1));}
+        if (i==UIConstants::MAX_DEGREE-1){test->setText("x1");}
+        else if (i==UIConstants::MAX_DEGREE-2){test->setText("x");}
+        else {test->setText("x^"+QString::number(UIConstants::MAX_DEGREE-i-1));}
 
         layout2->addWidget(box,3);
         layout2->addWidget(test,1);
@@ -300,6 +382,8 @@ void MainWindow::initGraph(){
 
         input_layout->addWidget(frame);
     }
+
+
 }
 
 void MainWindow::refreshGraph(){
@@ -325,25 +409,31 @@ void MainWindow::refreshSeries(){
     //get x min and max values
     double xmin = ui->input_min->value();
     double xmax = ui->input_max->value();
-    double step = (xmax - xmin) / (NUMBER_POINTS - 1);
+
+    if (UIConstants::NUMBER_POINTS <= 1) {
+        qWarning() << "UIConstants::NUMBER_POINTS must be at least 2";
+        return;
+    }
+
+    double step = (xmax - xmin) / (UIConstants::NUMBER_POINTS - 1);
 
     QList<QPointF> newPoints, newPointsFirst, newPointsSecond, newPointsTangent;
-    newPoints.reserve(NUMBER_POINTS);
+    newPoints.reserve(UIConstants::NUMBER_POINTS);
 
     //apply the function to every x point
-    for (int i = 0; i < NUMBER_POINTS; i++) {
+    for (int i = 0; i < UIConstants::NUMBER_POINTS; i++) {
         double x = xmin + i * step;
-        newPoints.append(QPointF(x, m_calculator.value(x)));
-        newPointsFirst.append(QPointF(x, m_calculator.value(x, 1)));    //first derivative should always be calculated for the extremas but not alwasy displayed
+        newPoints.append(QPointF(x, m_calculator.evaluate(x)));
+        newPointsFirst.append(QPointF(x, m_calculator.evaluate(x, 1)));    //first derivative should always be calculated for the extremas but not alwasy displayed
 
         //if thz second derivative should be displayed
         if (ui->box_derivate_second->isChecked()) {
-            newPointsSecond.append(QPointF(x, m_calculator.value(x, 2)));
+            newPointsSecond.append(QPointF(x, m_calculator.evaluate(x, 2)));
         }
         //if the tangent should be displayed
         if (ui->box_tangent->isChecked()) {
             double a = ui->selected_x->value();
-            newPointsTangent.append(QPointF(x, m_calculator.valueTangent(x, a)));
+            newPointsTangent.append(QPointF(x, m_calculator.evaluateTangent(x, a)));
         }
     }
 
@@ -361,14 +451,18 @@ void MainWindow::refreshSeries(){
     model->setColumnCount(1);
     model->setHeaderData(0, Qt::Horizontal, "roots");
 
-    QList<double> roots_list = m_calculator.AllXO(m_calculator.ApproximateX0(newPoints),0);
+    QList<double> roots_list = m_calculator.findAllRoots(m_calculator.approximateX0(newPoints),0);
     model->setRowCount(roots_list.size());
 
     for (int i=0; i<roots_list.size();i++){
         QStandardItem *item = new QStandardItem(QString::number(roots_list[i], 'f', 6));
         model->setItem(i, 0, item);
     }
+    QStandardItemModel *oldModel = qobject_cast<QStandardItemModel*>(ui->roots_table->model());
     ui->roots_table->setModel(model);
+    if (oldModel) {
+        oldModel->deleteLater();
+    }
 
 
     //part to determine extrema
@@ -376,15 +470,18 @@ void MainWindow::refreshSeries(){
     model_extr->setColumnCount(1);
     model_extr->setHeaderData(0, Qt::Horizontal, "extremas");
 
-    QList<double> extrema_list = m_calculator.AllXO(m_calculator.ApproximateX0(newPointsFirst),1);
+    QList<double> extrema_list = m_calculator.findAllRoots(m_calculator.approximateX0(newPointsFirst),1);
     model_extr->setRowCount(extrema_list.size());
 
     for (int i=0; i<extrema_list.size();i++){
         QStandardItem *item = new QStandardItem(QString::number(extrema_list[i], 'f', 6));
         model_extr->setItem(i, 0, item);
     }
+    QStandardItemModel *oldModelExtr = qobject_cast<QStandardItemModel*>(ui->extrema_table->model());
     ui->extrema_table->setModel(model_extr);
-
+    if (oldModelExtr) {
+        oldModelExtr->deleteLater();
+    }
 }
 
 void MainWindow::refreshAxes(){
@@ -418,6 +515,9 @@ void MainWindow::refreshAxes(){
         if (ymin==ymax){
             ymin=ymin-5;
             ymax=ymax+5;
+        }else {
+            ymin=ymin*UIConstants::DEFAULT_Y_MARGIN_FACTOR;
+            ymax=ymax*UIConstants::DEFAULT_Y_MARGIN_FACTOR;
         }
 
         ui->input_ymin->blockSignals(true);
@@ -498,36 +598,40 @@ void MainWindow::refreshEquations(){
     ui->Title->setText(m_calculator.polynomialToString(coeffs));
     ui->derivate_first_output->setText(m_calculator.polynomialToString(m_calculator.getDerivativeCoefficients(1),1));
     ui->derivate_second_output->setText(m_calculator.polynomialToString(m_calculator.getDerivativeCoefficients(2),2));
-    ui->integration_equation_output->setText(m_calculator.polynomialToString(m_calculator.GetIntegrationCoefficients(),-1));
-    ui->integrationvalue_output->setValue(m_calculator.IntegrationValue(ui->start_integration_input->value(),ui->end_integration_input->value()));
+    ui->integration_equation_output->setText(m_calculator.polynomialToString(m_calculator.getIntegrationCoefficients(),-1));
+    ui->integrationvalue_output->setValue(m_calculator.evaluateIntegration(ui->start_integration_input->value(),ui->end_integration_input->value()));
 }
 
 void MainWindow::move_select_point(){
     double x = ui->selected_x->value();
-    double y = m_calculator.value(x);
+    double y = m_calculator.evaluate(x);
 
     m_selectedPoint->clear();
     m_selectedPoint->append(x,y);
 
     ui->selected_y->setValue(y);
-    ui->selected_tangent->setValue(m_calculator.value(x,1));
-    ui->selected_der1->setValue(m_calculator.value(x,1));
-    ui->selected_der2->setValue(m_calculator.value(x,2));
+    ui->selected_tangent->setValue(m_calculator.evaluate(x,1));
+    ui->selected_der1->setValue(m_calculator.evaluate(x,1));
+    ui->selected_der2->setValue(m_calculator.evaluate(x,2));
 }
 
 void MainWindow::updateCalculatorCoefficients(){
     int degree = ui->input_input->value();
-    int max = ui->input_layout->count();
     QList<double> coeffs;
 
-    for (int i = max - degree; i < max; i++){
+    for (int i = 0; i < degree; i++) {
+        coeffs.append(0.0);
+    }
+
+    int max = ui->input_layout->count();
+    int startIdx = max - degree;
+    for (int i = startIdx; i < max; i++){
         if (auto *container = qobject_cast<QWidget*>(ui->input_layout->itemAt(i)->widget())) {
             if (auto *spinBox = container->findChild<QDoubleSpinBox*>()) {
-                coeffs.append(spinBox->value());
+                coeffs[i - startIdx] = spinBox->value();
             }
         }
     }
-
     m_calculator.setCoefficients(coeffs);
 }
 
@@ -538,19 +642,23 @@ void MainWindow::updateIntegrationArea(){
     if (start > end)
         std::swap(start, end);
 
+    if (start == end) return; // prevent division 0
+
     QVector<QPointF> top;
     QVector<QPointF> bottom;
 
-    int N = NUMBER_POINTS;
+    int N = UIConstants::NUMBER_POINTS;
     double step = (end - start) / (N - 1);
 
     for (int i = 0; i < N; i++) {
         double x = start + i * step;
-        double y = m_calculator.value(x);
+        double y = m_calculator.evaluate(x);
 
-        top.append(QPointF(x,y));
-        bottom.append(QPointF(x,0));
 
+        if (std::isfinite(y)) {
+            top.append(QPointF(x,y));
+            bottom.append(QPointF(x,0));
+        }
     }
 
     m_integrationSeries->replace(top);
@@ -575,7 +683,9 @@ void MainWindow::on_selected_x_valueChanged()
 
 void MainWindow::on_input_min_valueChanged(double value) {
     if (value >= ui->input_max->value()) {
+        ui->input_max->blockSignals(true);
         ui->input_max->setValue(value+1);
+        ui->input_max->blockSignals(false);
     }
     refreshSeries();
     refreshAxes();
@@ -583,7 +693,9 @@ void MainWindow::on_input_min_valueChanged(double value) {
 
 void MainWindow::on_input_max_valueChanged(double value) {
     if (value <= ui->input_min->value()) {
+        ui->input_min->blockSignals(true);
         ui->input_min->setValue(value-1);
+        ui->input_min->blockSignals(false);
     }
     refreshSeries();
     refreshAxes();
@@ -591,31 +703,72 @@ void MainWindow::on_input_max_valueChanged(double value) {
 
 void MainWindow::on_manual_y_limit_stateChanged(int arg1)
 {
-    if (arg1==2){
-        ui->grid_Y_limit->setEnabled(true);
-    }else{
-        ui->grid_Y_limit->setEnabled(false);
+    bool enabled = (arg1 == Qt::Checked);
+    ui->grid_Y_limit->setEnabled(enabled);
+
+    if (enabled) {
+        double ymin = ui->input_ymin->value();
+        double ymax = ui->input_ymax->value();
+        if (ymin >= ymax) {
+            ui->input_ymax->setValue(ymin + 1.0);
+        }
     }
-    refreshSeries();
     refreshAxes();
 }
-
 
 void MainWindow::on_input_ymin_valueChanged(double value)
 {
-    if (value >= ui->input_ymax->value()) {
+    ui->input_ymax->blockSignals(true);
+    if (value >= ui->input_ymax->value()-.0001) {
         ui->input_ymax->setValue(value+.1);
     }
+    ui->input_ymax->blockSignals(false);
     refreshSeries();
     refreshAxes();
 }
 
-
 void MainWindow::on_input_ymax_valueChanged(double value)
 {
-    if (value <= ui->input_ymin->value()) {
+    ui->input_ymin->blockSignals(true);
+    if (value <= ui->input_ymin->value()+.0001) {
         ui->input_ymin->setValue(value-.1);
     }
+    ui->input_ymin->blockSignals(false);
+    refreshSeries();
+    refreshAxes();
+}
+
+void MainWindow::on_zoom_button_clicked()
+{
+    if (ui->zoom_button->isChecked()) {
+        // Activer le mode zoom
+        m_zoomMode = true;
+        m_zoomClickCount = 0;
+
+        // Désactiver les autres modes qui pourraient interférer
+        if (ui->startendbutton->isChecked()) {
+            ui->startendbutton->setChecked(false);
+            m_integration_point_counter = 0;
+        }
+
+        // Optionnel : changer le curseur pour indiquer le mode zoom
+        m_chartView->viewport()->setCursor(Qt::CrossCursor);
+    }
+    else {
+        // Désactiver le mode zoom
+        m_zoomMode = false;
+        m_zoomClickCount = 0;
+
+        // Restaurer le curseur
+        m_chartView->viewport()->setCursor(Qt::ArrowCursor);
+    }
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    ui->manual_y_limit->setChecked(false);
+    ui->input_min->setValue(UIConstants::DEFAULT_X_MIN);
+    ui->input_max->setValue(UIConstants::DEFAULT_X_MAX);
     refreshSeries();
     refreshAxes();
 }

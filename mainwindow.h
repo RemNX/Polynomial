@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "polynomialcalculator.h"
+#include "types.h"
 
 #include <QMainWindow>
 #include <QtCharts/QLineSeries>
@@ -62,10 +63,11 @@ private slots:
 
     void on_input_ymax_valueChanged(double value);
 
-private:
-    static constexpr int MAX_DEGREE=6;
-    static constexpr int NUMBER_POINTS=1000;
+    void on_zoom_button_clicked();
 
+    void on_pushButton_clicked();
+
+private:
     int m_integration_point_counter=0;
 
     PolynomialCalculator m_calculator;
@@ -96,6 +98,10 @@ private:
     QAreaSeries *m_areaSeries = nullptr;
 
 
+    bool m_zoomMode;
+    QPointF m_firstZoomPoint;
+    int m_zoomClickCount;
+
 
     /**
      * @brief Initialize the chart and UI components
@@ -106,6 +112,8 @@ private:
      *
      */
     void initGraph();
+
+    void applyZoomRegion(const QPointF& p1, const QPointF& p2);
 
     /**
      * @brief Recompute and redraw all graph elements

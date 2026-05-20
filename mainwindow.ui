@@ -36,11 +36,36 @@
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="manual_y_limit">
-          <property name="text">
-           <string>manual Y limit</string>
-          </property>
-         </widget>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QCheckBox" name="manual_y_limit">
+            <property name="text">
+             <string>manual Y limit</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <item>
+             <widget class="QPushButton" name="zoom_button">
+              <property name="text">
+               <string>Zoom</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton">
+              <property name="text">
+               <string>Reset</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
         <item>
          <widget class="QFrame" name="grid_Y_limit">

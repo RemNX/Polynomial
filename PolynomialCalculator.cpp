@@ -3,12 +3,7 @@
 PolynomialCalculator::PolynomialCalculator() {
 }
 
-
-void PolynomialCalculator::clearCache(){
-    m_derivativeCache.clear();      //clear stored derivatives coefficients
-}
-
-
+//______coefficients________
 void PolynomialCalculator::setCoefficients(const QList<double> &coeffs){
     if (coeffs.isEmpty()) {
         qWarning() << "Setting empty coefficient list";
@@ -20,62 +15,11 @@ void PolynomialCalculator::setCoefficients(const QList<double> &coeffs){
     clearCache();               //new coefficients = new derivative so a clear is needed
 }
 
-
 QList<double> PolynomialCalculator::getCoefficients() const{
     return m_coefficients;
 }
 
-
-QList<double> PolynomialCalculator::getDerivativeCoefficients(int order) const{
-    if (order<1){
-        qWarning() << "Invalid derivative order:" << order;
-        return m_coefficients;
-    }
-    //check if derivative already in cache
-    auto it = m_derivativeCache.find(order);
-    if (it != m_derivativeCache.end()) {
-        QList<double> res = it.value();
-        return res;
-    }
-
-    //compute and cache the derivative coefficients
-    QList<double> res=DerivativeCoefficient(order);
-    m_derivativeCache[order]=res;
-
-    return res;
-
-}
-
-
-double PolynomialCalculator::value(double x, int derivative_order) const{
-    if (m_coefficients.isEmpty()) {
-        return 0.0;
-    }
-    double res=0;
-
-    //select appropriate coefficients
-    QList<double> coeffs;
-    if (derivative_order==0){               //if usual polynomial
-        coeffs=getCoefficients();
-    }else if (derivative_order>0){          //if it is a derived polynomial
-        coeffs=getDerivativeCoefficients(derivative_order);
-    }else if (derivative_order==-1){         //if its in the integration
-        coeffs=GetIntegrationCoefficients();
-    }else{                                 //invalid order
-        qDebug()<<"ERROR : Negative order for derivative";
-        return 0.0;
-    }
-
-
-    //evaluate polynomial (coeffs[0] = highest degree)
-    for (int i=0;i<coeffs.size();i++){
-        res+=coeffs[i]*std::pow(x,coeffs.size()-1-i);
-    }
-    return res;
-}
-
-
-QList<double> PolynomialCalculator::DerivativeCoefficient(int order) const{
+QList<double> PolynomialCalculator::derivativeCoefficient(int order) const{
     //start from original coefficients
     QList<double> coeffsfirst = getCoefficients();
 
@@ -91,65 +35,27 @@ QList<double> PolynomialCalculator::DerivativeCoefficient(int order) const{
     return coeffsfirst;
 }
 
+QList<double> PolynomialCalculator::getDerivativeCoefficients(int order) const{
+    if (order<1){
+        qWarning() << "Invalid derivative order:" << order;
+        return m_coefficients;
+    }
+    //check if derivative already in cache
+    auto it = m_derivativeCache.find(order);
+    if (it != m_derivativeCache.end()) {
+        QList<double> res = it.value();
+        return res;
+    }
 
-double PolynomialCalculator::valueTangent(double x, double a) const{
-    return value(a,1)*(x-a)+value(a);
+    //compute and cache the derivative coefficients
+    QList<double> res=derivativeCoefficient(order);
+    m_derivativeCache[order]=res;
+
+    return res;
+
 }
 
-
-QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs,int order) const{
-
-    //function name f(x), f'(x) or f''(x) or F(x)
-    QString result;
-    if (order<0){
-        result = "F(x) = ";
-    }else {
-        result = "f" + QString("'").repeated(order) + "(x) = ";
-    }
-
-
-    if (coeffs.isEmpty()) return result+"0";
-
-    int degree = coeffs.size();
-    bool firstTerm = true;                      //for the first coeff
-
-    for (int i = 0; i < degree; i++){
-        double coeff    = coeffs[i];            //current coeffficient
-        int    exponent = degree-i-1;
-
-        if (coeff == 0.0) continue;             //do not display coefficients equal to 0
-
-        if (!firstTerm)                             //if first term add a + or a -
-            result += (coeff > 0) ? " + " : " - ";
-        else if (coeff < 0)                         //else only add - if negative
-            result += "-";
-
-        double absCoeff = std::abs(coeff);
-
-        if (absCoeff != 1.0 || exponent == 0)
-            result += QString::number(absCoeff, 'g', 3); // 4 decimal number
-
-        if (exponent == 1)              //if it is the second-to-last coefficient
-            result += "x";
-        else if (exponent > 1)
-            result += "x^" + QString::number(exponent);
-
-        firstTerm = false;
-    }
-
-    QString LastTerm;
-    if (order<0){
-        if (firstTerm) LastTerm = "C";
-        else LastTerm = " + C";
-    }else{
-        if (firstTerm) LastTerm = "0";
-    }
-
-    return result+LastTerm;
-}
-
-
-QList<double> PolynomialCalculator::GetIntegrationCoefficients() const{
+QList<double> PolynomialCalculator::getIntegrationCoefficients() const{
     QList <double> coeffs=m_coefficients;
     if (coeffs.isEmpty()) {
         return {0};
@@ -167,14 +73,53 @@ QList<double> PolynomialCalculator::GetIntegrationCoefficients() const{
     return newcoeffs;
 }
 
-double PolynomialCalculator::IntegrationValue(double start, double end){
-    double start_value = value(start,-1);
-    double end_value = value(end,-1);
+void PolynomialCalculator::clearCache(){
+    m_derivativeCache.clear();      //clear stored derivatives coefficients
+}
+
+
+//______evaluation________
+double PolynomialCalculator::evaluate(double x, int derivative_order) const{
+    if (m_coefficients.isEmpty()) {
+        return 0.0;
+    }
+    double res=0;
+
+    //select appropriate coefficients
+    QList<double> coeffs;
+    if (derivative_order==0){               //if usual polynomial
+        coeffs=getCoefficients();
+    }else if (derivative_order>0){          //if it is a derived polynomial
+        coeffs=getDerivativeCoefficients(derivative_order);
+    }else if (derivative_order==-1){         //if its in the integration
+        coeffs=getIntegrationCoefficients();
+    }else{                                 //invalid order
+        qDebug()<<"ERROR : Negative order for derivative";
+        return 0.0;
+    }
+
+
+    //evaluate polynomial (coeffs[0] = highest degree)
+    for (int i=0;i<coeffs.size();i++){
+        res+=coeffs[i]*std::pow(x,coeffs.size()-1-i);
+    }
+    return res;
+}
+
+double PolynomialCalculator::evaluateTangent(double x, double a) const{
+    return evaluate(a,1)*(x-a)+evaluate(a);
+}
+
+double PolynomialCalculator::evaluateIntegration(double start, double end){
+    double start_value = evaluate(start,-1);
+    double end_value = evaluate(end,-1);
 
     return end_value-start_value;
 }
 
-QList<double> PolynomialCalculator::ApproximateX0(QList<QPointF> series){
+
+//______roots & extremas________
+QList<double> PolynomialCalculator::approximateX0(QList<QPointF> series){
     QList<double> coeffs = getCoefficients();
     bool rootable = false;
     for (int i=0; i<coeffs.size()-1;i++){       //if there is only zero for all coefficient except the constant one there is not root value
@@ -224,17 +169,17 @@ QList<double> PolynomialCalculator::ApproximateX0(QList<QPointF> series){
 
 double PolynomialCalculator::Newton(double x0,int derivative_order){
     double x = x0;
-    for (int loop=0;loop<MAX_ROOT_LOOP;loop++){
-        double fx = value(x,derivative_order);
-        double dfx = value(x,derivative_order+1);
+    for (int loop=0;loop<MathConstants::MAX_ROOT_LOOP;loop++){
+        double fx = evaluate(x,derivative_order);
+        double dfx = evaluate(x,derivative_order+1);
 
-        if (fabs(dfx) < 1e-12) {
+        if (fabs(dfx) < MathConstants::EPSILON) {
             x += 1e-6;
             continue;
         }
 
         double xplus1=x-fx/dfx;
-        if (fabs(xplus1-x)<ROOT_PRECISION){
+        if (fabs(xplus1-x)<MathConstants::ROOT_PRECISION){
             return xplus1;}
 
         x=xplus1;
@@ -242,14 +187,14 @@ double PolynomialCalculator::Newton(double x0,int derivative_order){
     return x;
 }
 
-QList<double> PolynomialCalculator::AllXO(QList<double> x0_list,int derivative_order){
+QList<double> PolynomialCalculator::findAllRoots(QList<double> x0_list,int derivative_order){
     QList<double> res;
     for (double x0 : x0_list){
 
         double newton_x0 = Newton(x0, derivative_order);
 
         //if close to zero
-        if (fabs(newton_x0) <1e-8){
+        if (fabs(newton_x0) <MathConstants::ZERO_THRESHOLD){
             newton_x0=0;
         }
 
@@ -264,4 +209,56 @@ QList<double> PolynomialCalculator::AllXO(QList<double> x0_list,int derivative_o
         if (!exist) res.append(newton_x0);
     }
     return res;
+}
+
+//______text________
+QString PolynomialCalculator::polynomialToString(const QList<double> &coeffs,int order) const{
+
+    //function name f(x), f'(x) or f''(x) or F(x)
+    QString result;
+    if (order<0){
+        result = "F(x) = ";
+    }else {
+        result = "f" + QString("'").repeated(order) + "(x) = ";
+    }
+
+
+    if (coeffs.isEmpty()) return result+"0";
+
+    int degree = coeffs.size();
+    bool firstTerm = true;                      //for the first coeff
+
+    for (int i = 0; i < degree; i++){
+        double coeff    = coeffs[i];            //current coeffficient
+        int    exponent = degree-i-1;
+
+        if (coeff == 0.0) continue;             //do not display coefficients equal to 0
+
+        if (!firstTerm)                             //if first term add a + or a -
+            result += (coeff > 0) ? " + " : " - ";
+        else if (coeff < 0)                         //else only add - if negative
+            result += "-";
+
+        double absCoeff = std::abs(coeff);
+
+        if (absCoeff != 1.0 || exponent == 0)
+            result += QString::number(absCoeff, 'g', 3); // 4 decimal number
+
+        if (exponent == 1)              //if it is the second-to-last coefficient
+            result += "x";
+        else if (exponent > 1)
+            result += "x^" + QString::number(exponent);
+
+        firstTerm = false;
+    }
+
+    QString LastTerm;
+    if (order<0){
+        if (firstTerm) LastTerm = "C";
+        else LastTerm = " + C";
+    }else{
+        if (firstTerm) LastTerm = "0";
+    }
+
+    return result+LastTerm;
 }

@@ -41,6 +41,13 @@ the executable file is in the build/Desktop_QT... folder.
 - added manual input for ymin and ymax with a checkable box
 - fixed integrate equations font to be visible for high degree one
 
+### 1.3.4 
+- added zoom and reset zoom options
+- beginning of the new code structure to be more understandable
+- corrected some ylim bugs 
+- prevent some memory leak
+- prevent object creation loop
+
 
 </details>
 
@@ -89,10 +96,9 @@ the executable file is in the build/Desktop_QT... folder.
 
 ## Objectives
 
-### for 1.3 : more functionality
-- zoom button
-
-### for 1.4 : more documentation 
+### for 1.4 : more documentation & correction
+- new code structure
+- comment on every actions
 - Access the README directly within the app
 - Explain what a polynomial function is
 - Add mathematical formulas
